@@ -1,4 +1,4 @@
-﻿namespace DotNetBackendTemplate.Exceptions;
+﻿namespace DotNetAngularTemplate.Exceptions;
 
 public class DuplicateEmailException : Exception
 {

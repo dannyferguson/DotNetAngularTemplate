@@ -1,4 +1,4 @@
-using DotNetBackendTemplate.Services;
+using DotNetAngularTemplate.Services;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,9 +1,9 @@
-﻿using DotNetBackendTemplate.Exceptions;
-using DotNetBackendTemplate.Helpers;
-using DotNetBackendTemplate.Models;
+﻿using DotNetAngularTemplate.Exceptions;
+using DotNetAngularTemplate.Helpers;
+using DotNetAngularTemplate.Models;
 using MySqlConnector;
 
-namespace DotNetBackendTemplate.Services;
+namespace DotNetAngularTemplate.Services;
 
 public class AuthService(ILogger<AuthService> logger, DatabaseService dbService)
 {

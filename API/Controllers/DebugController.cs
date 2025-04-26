@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DotNetBackendTemplate.Controllers;
+namespace DotNetAngularTemplate.Controllers;
 
 [ApiController]
 [Route("api/v1/debug")]

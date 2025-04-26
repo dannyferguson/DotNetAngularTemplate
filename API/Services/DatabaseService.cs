@@ -1,7 +1,7 @@
-﻿using DotNetBackendTemplate.Exceptions;
+﻿using DotNetAngularTemplate.Exceptions;
 using MySqlConnector;
 
-namespace DotNetBackendTemplate.Services;
+namespace DotNetAngularTemplate.Services;
 
 public class DatabaseService
 {

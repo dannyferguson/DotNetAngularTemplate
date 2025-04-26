@@ -1,7 +1,7 @@
-﻿using DotNetBackendTemplate.Services;
+﻿using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DotNetBackendTemplate.Controllers;
+namespace DotNetAngularTemplate.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]

@@ -1,4 +1,4 @@
-﻿namespace DotNetBackendTemplate.Models;
+﻿namespace DotNetAngularTemplate.Models;
 
 public class Result<T>
 {
