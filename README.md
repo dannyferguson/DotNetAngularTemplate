@@ -12,7 +12,7 @@ Considerations:
 ## Environment Variables
 
 There are a few required environment variables to run this:
-* `ConectionStrings__Default` which is the MySQL connection string, typically in the following format: `Server=127.0.0.1;Port=3306;Database=dotnetangulardb;Uid=root;Pwd=supersecure123;`
+* `ConectionStrings__Default` which is the MySQL connection string (used for all the data except sessions), typically in the following format: `Server=127.0.0.1;Port=3306;Database=dotnetangulardb;Uid=root;Pwd=supersecure123;`
 
 * `ConectionStrings__Redis` which is as you've guessed the Redis connection string (used for session storage). Format: `127.0.0.1:6379,password=supersecuremuchlonger123`
 
