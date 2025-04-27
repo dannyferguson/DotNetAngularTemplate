@@ -8,3 +8,12 @@ Considerations:
 * Another preference when it comes to personal projects is that I do not care for an ORM. I know enough SQL to write the queries myself.
 
 * I also prefer doing session/cookie based authentication versus JWT since users are more in control of their sessions. And scaling would really not be much of a problem (centralized cache like redis + more backend instances)
+
+## Environment Variables
+
+There are a few required environment variables to run this:
+* `ConectionStrings__Default` which is the MySQL connection string, typically in the following format: `Server=127.0.0.1;Port=3306;Database=dotnetangulardb;Uid=root;Pwd=supersecure123;`
+
+* `ConectionStrings__Redis` which is as you've guessed the Redis connection string (used for session storage). Format: `127.0.0.1:6379,password=supersecuremuchlonger123`
+
+* This one might be obvious but `ASPNETCORE_ENVIRONMENT` to either `Production` or `Development` respectively.
