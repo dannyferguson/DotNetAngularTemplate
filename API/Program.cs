@@ -3,8 +3,18 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add in-mem cache + sessions
-builder.Services.AddDistributedMemoryCache();
+// Add redis cache + sessions
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+if (redisConnectionString == null)
+{
+    Console.WriteLine("Missing environment variable ConectionStrings__Redis. Please set it before running the application!");
+    Environment.Exit(1);
+}
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+});
+
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
