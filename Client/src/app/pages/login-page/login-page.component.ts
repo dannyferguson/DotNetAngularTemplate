@@ -3,13 +3,16 @@ import {Router, RouterLink} from '@angular/router';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {AuthService} from '../../services/auth.service';
 import {SubmitButtonComponent} from '../../components/buttons/submit-button/submit-button.component';
+import {NgClass} from '@angular/common';
+import {TextInputComponent} from '../../components/form-elements/text-input/text-input.component';
 
 @Component({
   selector: 'app-login-page',
   imports: [
     RouterLink,
     ReactiveFormsModule,
-    SubmitButtonComponent
+    SubmitButtonComponent,
+    TextInputComponent
   ],
   templateUrl: './login-page.component.html'
 })
@@ -62,7 +65,7 @@ export class LoginPageComponent {
           this.submitButton.setSuccess(true);
           setTimeout(() => {
             this.router.navigate(['/']);
-          }, 2500);
+          }, 2000);
         },
         error: err => {
           this.submitting.set(false);
