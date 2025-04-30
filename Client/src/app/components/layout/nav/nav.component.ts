@@ -10,8 +10,7 @@ import {RouterLink} from '@angular/router';
     AsyncPipe,
     RouterLink
   ],
-  templateUrl: './nav.component.html',
-  styleUrl: './nav.component.css'
+  templateUrl: './nav.component.html'
 })
 export class NavComponent {
   private authService = inject(AuthService);
