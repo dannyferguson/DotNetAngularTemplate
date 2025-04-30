@@ -5,6 +5,7 @@ import {AuthService} from '../../services/auth.service';
 import {SubmitButtonComponent} from '../../components/buttons/submit-button/submit-button.component';
 import {NgClass} from '@angular/common';
 import {TextInputComponent} from '../../components/form-elements/text-input/text-input.component';
+import {AlertBannerComponent} from '../../components/alert-banner/alert-banner.component';
 
 @Component({
   selector: 'app-login-page',
@@ -12,7 +13,8 @@ import {TextInputComponent} from '../../components/form-elements/text-input/text
     RouterLink,
     ReactiveFormsModule,
     SubmitButtonComponent,
-    TextInputComponent
+    TextInputComponent,
+    AlertBannerComponent
   ],
   templateUrl: './login-page.component.html'
 })
@@ -24,6 +26,7 @@ export class LoginPageComponent {
 
   protected submitting = signal(false);
   protected errorMessage = signal<string | undefined>(undefined);
+  protected successMessage = signal<string | undefined>(undefined);
 
   loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
@@ -35,12 +38,12 @@ export class LoginPageComponent {
       return;
     }
 
-    this.markAllAsTouched();
+    this.loginForm.markAllAsTouched();
 
     if (this.loginForm.valid) {
       this.submitting.set(true);
       this.errorMessage.set(undefined);
-      this.submitButton.setLoading(true);
+      this.submitButton.loading.set(true);
 
       const { email, password } = this.loginForm.getRawValue();
       if (!email || !password) {
@@ -50,14 +53,14 @@ export class LoginPageComponent {
 
       this.authService.login(email, password).subscribe({
         next: (_) => {
-          this.submitButton.setSuccess(true);
+          this.successMessage.set('Success! Redirecting..')
           setTimeout(() => {
             this.router.navigate(['/']);
           }, 2000);
         },
         error: err => {
           this.submitting.set(false);
-          this.submitButton.setLoading(false);
+          this.submitButton.loading.set(false);
 
           if (err.status === 401) {
             this.errorMessage.set('Invalid credentials. Please try again.');
@@ -68,9 +71,5 @@ export class LoginPageComponent {
         }
       });
     }
-  }
-
-  private markAllAsTouched(): void {
-    this.loginForm.markAllAsTouched();
   }
 }

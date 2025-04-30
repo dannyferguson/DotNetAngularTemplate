@@ -29,8 +29,7 @@
 
       <app-submit-button
         buttonText="Sign In"
-        loadingText="Signing in..."
-        successText="Success! Redirecting..">
+        loadingText="Signing in...">
       </app-submit-button>
     </form>
 
@@ -39,11 +38,6 @@
       <a routerLink="/register" class="font-semibold text-indigo-600 hover:text-indigo-500">Register</a>
     </p>
 
-    <div class="min-h-20 md:min-h-14 mt-4">
-      @if (errorMessage()) {
-        <p class="p-4 bg-red-300 rounded text-red-800">{{errorMessage()}}</p>
-      }
-    </div>
-
+    <app-alert-banner [error]="errorMessage()" [success]="successMessage()"></app-alert-banner>
   </div>
 </div>
