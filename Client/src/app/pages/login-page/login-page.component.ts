@@ -22,9 +22,8 @@ export class LoginPageComponent {
 
   @ViewChild(SubmitButtonComponent) submitButton!: SubmitButtonComponent;
 
-  public submitting = signal(false);
-  public errors = signal<string[]>([]);
-  public success = signal(false);
+  protected submitting = signal(false);
+  protected errorMessage = signal<string | undefined>(undefined);
 
   loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
@@ -35,28 +34,17 @@ export class LoginPageComponent {
     if (this.submitting()) {
       return;
     }
-    this.submitButton.setLoading(true);
-    this.submitting.set(true);
-    this.errors.set([]);
 
-    const newErrors: string[] = [];
+    this.markAllAsTouched();
 
     if (this.loginForm.valid) {
+      this.submitting.set(true);
+      this.errorMessage.set(undefined);
+      this.submitButton.setLoading(true);
+
       const { email, password } = this.loginForm.getRawValue();
       if (!email || !password) {
-        if (!email) {
-          newErrors.push('Email is required');
-        }
-        if (!password) {
-          newErrors.push('Password is required');
-        }
-        return;
-      }
-
-      if (newErrors.length > 0) {
-        this.errors.set(newErrors);
         this.submitting.set(false);
-        this.submitButton.setLoading(false);
         return;
       }
 
@@ -70,9 +58,19 @@ export class LoginPageComponent {
         error: err => {
           this.submitting.set(false);
           this.submitButton.setLoading(false);
-          console.log(err);
+
+          if (err.status === 401) {
+            this.errorMessage.set('Invalid credentials. Please try again.');
+            return;
+          }
+
+          this.errorMessage.set('A server error has occured. Please try again later.');
         }
       });
     }
+  }
+
+  private markAllAsTouched(): void {
+    this.loginForm.markAllAsTouched();
   }
 }

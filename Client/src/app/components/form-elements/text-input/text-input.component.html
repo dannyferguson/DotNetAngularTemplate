@@ -1,4 +1,4 @@
-<div class="mb-4">
+<div class="mb-2">
   <div class="flex items-center justify-between">
     <label [for]="id()" class="block text-md/6 font-medium text-gray-900">{{label()}}</label>
     @if (buttonText()) {
@@ -30,5 +30,7 @@
         Please enter a valid email.
       }
     </p>
+  } @else {
+    <p>&nbsp;</p>
   }
 </div>
