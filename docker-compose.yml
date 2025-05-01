@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:5000"
+    environment:
+      ConnectionStrings__Default: "Server=mysql;Database=appdb;Uid=root;Password=supersecure123;"
+      ConnectionStrings__Redis: "redis:6379"
+      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_ENVIRONMENT: "Development"
+    volumes:
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      - redis
+      - mysql
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecure123
+      MYSQL_DATABASE: appdb
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+  dataprotection_keys:

@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{D82C56D6-B2C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetAngularTemplate", "API\DotNetAngularTemplate.csproj", "{B1F4FE2E-94DE-44A3-9EDE-5BF5D4F25D91}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{BA2AEE40-13A7-49D4-A5ED-75C9A9D5724D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,6 +19,8 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BA2AEE40-13A7-49D4-A5ED-75C9A9D5724D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA2AEE40-13A7-49D4-A5ED-75C9A9D5724D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1F4FE2E-94DE-44A3-9EDE-5BF5D4F25D91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B1F4FE2E-94DE-44A3-9EDE-5BF5D4F25D91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1F4FE2E-94DE-44A3-9EDE-5BF5D4F25D91}.Debug|x64.ActiveCfg = Debug|Any CPU
