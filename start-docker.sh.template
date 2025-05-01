@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# Rename to start.sh and set your own environment variables and execute to run this locally.
+
+docker build -t dotnet-angular-template .
+
+docker run -p 8080:5000 \
+  -v dataprotection_keys:/root/.aspnet/DataProtection-Keys \
+  -e "ASPNETCORE_URLS=http://+:5000" \
+  -e "ASPNETCORE_ENVIRONMENT=Development" \
+  -e "ConnectionStrings__Default=Server=127.0.0.1;Port=3306;Database=dotnetangulardb;Uid=root;Pwd=supersecure123;" \
+  -e "ConnectionStrings__Redis=127.0.0.1:6379,password=supersecuremuchlonger123" \
+  dotnet-angular-template
