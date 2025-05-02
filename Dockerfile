@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get update && \
-    apt-get install -y nodejs
+    apt-get install -y nodejs dos2unix
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ WORKDIR /app
 COPY . .
 
 # Run Nuke build
-RUN ./build.sh --target Publish || ./build.cmd --target Publish
+RUN dos2unix ./build.sh && ./build.sh --target Publish --root /app
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
