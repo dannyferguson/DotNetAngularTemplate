@@ -2,6 +2,8 @@
 
 This is going to serve as an *opinionated* personal template for deploying basic ASP.NET + Angular SPA apps. Meaning .NET will handle all the backend stuff while Angular will handle the UI in SPA mode.
 
+**Demo: https://dotnetangular.ondanny.com/**
+
 Considerations:
 * While its easy to add OAuth authentication, for my personal projects I prefer to keep it to the basic email/password combo. That way I don't have to worry about user counts/billing.
 
