@@ -16,4 +16,10 @@ export class AuthService {
       retry(2)
     );
   }
+
+  public register(email: string, password: string): Observable<any> {
+    return this.http.post<any>('/api/v1/auth/register', {email: email, password: password}).pipe(
+      retry(2)
+    );
+  }
 }

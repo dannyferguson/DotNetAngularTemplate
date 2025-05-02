@@ -28,6 +28,12 @@
         Field is required.
       } @else if (formControl().hasError('email')) {
         Please enter a valid email.
+      } @else if (formControl().hasError('minlength') && type() === 'password') {
+        Password must contain at least 12 characters.
+      } @else if (formControl().hasError('maxlength') && type() === 'password') {
+        Password must contain at most 128 characters.
+      } @else if (formControl().hasError('passwordsMismatch') && type() === 'password') {
+        Passwords do not match.
       }
     </p>
   } @else {

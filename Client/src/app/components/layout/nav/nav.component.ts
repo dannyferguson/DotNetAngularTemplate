@@ -1,15 +1,16 @@
 import {Component, inject} from '@angular/core';
 import {AsyncPipe, NgClass} from '@angular/common';
 import {AuthService} from '../../../services/auth.service';
-import {RouterLink} from '@angular/router';
+import {RouterLink, RouterLinkActive} from '@angular/router';
 
 @Component({
   selector: 'app-nav',
-  imports: [
-    NgClass,
-    AsyncPipe,
-    RouterLink
-  ],
+    imports: [
+        NgClass,
+        AsyncPipe,
+        RouterLink,
+        RouterLinkActive
+    ],
   templateUrl: './nav.component.html'
 })
 export class NavComponent {
