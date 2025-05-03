@@ -16,9 +16,9 @@ public class AuthService(ILogger<AuthService> logger, DatabaseService dbService)
             await dbService.InsertUserAsync(email, hashedPassword);
             return Result.Success();
         }
-        catch (DuplicateEmailException ex)
+        catch (DuplicateEmailException)
         {
-            logger.LogWarning(ex, "Registration failed due to duplicate email: {@email}", email);
+            logger.LogWarning("Registration failed due to duplicate email: {@email}", email);
             return Result.Failure("Email address is already registered.");
         }
         catch (MySqlException ex)

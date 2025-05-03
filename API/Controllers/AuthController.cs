@@ -1,4 +1,5 @@
-﻿using DotNetAngularTemplate.Models;
+﻿using DotNetAngularTemplate.Models.DTO;
+using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,62 +10,89 @@ namespace DotNetAngularTemplate.Controllers;
 public class AuthController(ILogger<AuthController> logger, AuthService authService) : ControllerBase
 {
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
-        }
-
-        var result = await authService.RegisterUserAsync(request.Email, request.Password);
-
-        if (result.IsSuccess)
-        {
-            return Ok(new
-            {
-                message = "Registration successful"
-            });
-        }
+            var errorMessage = string.Join("; ", ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
         
-        if (result.Error == "Email address is already registered.")
-        {
-            return Conflict(new
+            return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
             {
-                error = result.Error
+                Success = false,
+                Message = errorMessage
             });
         }
 
-        logger.LogError("Registration failed for {@RequestEmail}: {@ResultError}", request.Email, result.Error);
-        return StatusCode(StatusCodes.Status500InternalServerError, new
+        var result = await authService.RegisterUserAsync(requestDto.Email, requestDto.Password);
+
+        if (result.IsSuccess || result.Error == "Email address is already registered.")
         {
-            error = "A server error occured."
+            if (result.Error == "Email address is already registered.")
+            {
+                // todo email existing user to tell them someone tried to register with their email? if it was them that they're already registered and can instead just reset their password if they forgot
+            }
+            
+            return Ok(new AuthResponse
+            {
+                Success = true,
+                Message = "Registration successful. Please check your email to verify your account."
+            });
+        }
+
+        logger.LogError("Registration failed for {@RequestEmail}: {@ResultError}", requestDto.Email, result.Error);
+        return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+        {
+            Success = false,
+            Message = "A server error occured. Please try again later."
         });
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            var errorMessage = string.Join("; ", ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
+        
+            return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
+            {
+                Success = false,
+                Message = errorMessage
+            });
         }
         
-        var userId = await authService.LoginUserAndGetIdAsync(request.Email, request.Password);
+        var userId = await authService.LoginUserAndGetIdAsync(requestDto.Email, requestDto.Password);
         if (userId == null)
         {
-            return Unauthorized();
+            return Unauthorized(new AuthResponse
+            {
+                Success = false,
+                Message = "Unauthorized"
+            });
         }
 
         HttpContext.Session.SetInt32("UserId", userId.Value);
 
-        return Ok();
+        return Ok(new AuthResponse
+        {
+            Success = true,
+            Message = "Login successful! Redirecting.."
+        });
     }
 
     [HttpPost("logout")]
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();
-        return Ok();
+        return Ok(new AuthResponse
+        {
+            Success = true,
+            Message = "Logout successful! Redirecting.."
+        });
     }
 
     [HttpGet("me")]

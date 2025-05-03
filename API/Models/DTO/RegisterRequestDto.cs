@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace DotNetAngularTemplate.Models;
+namespace DotNetAngularTemplate.Models.DTO;
 
-public class LoginRequest
+public class RegisterRequestDto
 {
     [Required]
     [EmailAddress]

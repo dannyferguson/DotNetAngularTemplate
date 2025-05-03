@@ -3,7 +3,6 @@ import {Router, RouterLink} from '@angular/router';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {AuthService} from '../../services/auth.service';
 import {SubmitButtonComponent} from '../../components/buttons/submit-button/submit-button.component';
-import {NgClass} from '@angular/common';
 import {TextInputComponent} from '../../components/form-elements/text-input/text-input.component';
 import {AlertBannerComponent} from '../../components/alert-banner/alert-banner.component';
 
@@ -52,24 +51,28 @@ export class LoginPageComponent {
       }
 
       this.authService.login(email, password).subscribe({
-        next: (_) => {
-          this.successMessage.set('Success! Redirecting..')
-          setTimeout(() => {
-            this.router.navigate(['/']);
-          }, 2000);
-        },
-        error: err => {
-          this.submitting.set(false);
-          this.submitButton.loading.set(false);
+        next: (response) => {
+          this.reset();
 
-          if (err.status === 401) {
-            this.errorMessage.set('Invalid credentials. Please try again.');
+          if (!response.success) {
+            this.errorMessage.set(response.message);
             return;
           }
 
-          this.errorMessage.set('A server error has occured. Please try again later.');
+          this.loginForm.reset();
+          this.successMessage.set(response.message);
+          setTimeout(() => {
+            this.router.navigate(['/']);
+          }, 2000);
         }
       });
     }
+  }
+
+  private reset(): void {
+    this.submitting.set(false);
+    this.submitButton.loading.set(false);
+    this.successMessage.set(undefined);
+    this.errorMessage.set(undefined);
   }
 }
