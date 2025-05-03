@@ -30,3 +30,6 @@ For the Docker enjoyers out there, I've provided a Dockerfile for the project wh
 
 I've also provided a docker-compose.yml that gives you a stack running this application, redis and mysql. That way you can run and test the whole thing easily.
 
+## Rate Limits
+
+I added some basic rate limiting. 100 requests per minute globally, or 10 per minute for the auth controller. You can configure these in [Program.cs](/blob/master/API/Program.cs)
