@@ -96,6 +96,21 @@ builder.Services.AddAntiforgery(options =>
 
 var app = builder.Build();
 
+// Configure basic security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff"; // Prevent MIME type sniffing
+    context.Response.Headers["X-Frame-Options"] = "DENY"; // Prevent clickjacking
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block"; // Legacy browsers only
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin"; // Limit referrer leakage
+    context.Response.Headers["Permissions-Policy"] =
+        "camera=(), microphone=(), geolocation=(), fullscreen=(self)"; // Limit APIs
+    context.Response.Headers["Content-Security-Policy"] =
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'"; // Only allow same origin content/scripts
+
+    await next();
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -103,6 +118,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseHsts();
 
 // Serve Angular from wwwroot folder
 app.UseStaticFiles(new StaticFileOptions
