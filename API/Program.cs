@@ -106,7 +106,7 @@ app.Use(async (context, next) =>
     context.Response.Headers["Permissions-Policy"] =
         "camera=(), microphone=(), geolocation=(), fullscreen=(self)"; // Limit APIs
     context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'"; // Only allow same origin content/scripts
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; img-src 'self' https://tailwindcss.com;"; // Only allow same origin content/scripts
 
     await next();
 });
