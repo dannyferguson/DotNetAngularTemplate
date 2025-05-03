@@ -105,8 +105,22 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin"; // Limit referrer leakage
     context.Response.Headers["Permissions-Policy"] =
         "camera=(), microphone=(), geolocation=(), fullscreen=(self)"; // Limit APIs
+    
+    var nonce = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+    context.Items["CSPNonce"] = nonce;
     context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; img-src 'self' https://tailwindcss.com;"; // Only allow same origin content/scripts
+        "default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'unsafe-inline'; object-src 'none'; img-src 'self' https://tailwindcss.com;"; // Only allow same origin content/scripts
+    
+    if (context.Request.Path == "/" || context.Request.Path == "/index.html")
+    {
+        var file = Path.Combine(app.Environment.WebRootPath, "index.html");
+        var html = await File.ReadAllTextAsync(file);
+        html = html.Replace("%NONCE%", nonce);
+
+        context.Response.ContentType = "text/html";
+        await context.Response.WriteAsync(html);
+        return;
+    }
 
     await next();
 });
