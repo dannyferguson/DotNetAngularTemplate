@@ -32,4 +32,4 @@ I've also provided a docker-compose.yml that gives you a stack running this appl
 
 ## Rate Limits
 
-I added some basic rate limiting. 100 requests per minute globally, or 10 per minute for the auth controller. You can configure these in [Program.cs](/blob/master/API/Program.cs)
+I added some basic rate limiting. 100 requests per minute globally, or 10 per minute for the auth controller. You can configure these in [Program.cs](/API/Program.cs)
