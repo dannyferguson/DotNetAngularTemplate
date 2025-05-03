@@ -3,7 +3,8 @@ import {provideRouter} from '@angular/router';
 
 import {routes} from './app.routes';
 import {AuthService} from './services/auth.service';
-import {provideHttpClient} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, provideHttpClient} from '@angular/common/http';
+import {CsrfInterceptor} from './interceptors/csrf.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,6 +14,11 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       const authService = inject(AuthService);
       return authService.checkAuth();
-    })
+    }),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CsrfInterceptor,
+      multi: true
+    }
   ],
 };

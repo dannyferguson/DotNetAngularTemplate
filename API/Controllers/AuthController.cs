@@ -1,6 +1,7 @@
 ﻿using DotNetAngularTemplate.Models.DTO;
 using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -52,7 +53,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto, [FromServices] IAntiforgery antiforgery)
     {
         if (!ModelState.IsValid)
         {
@@ -73,7 +74,9 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             });
         }
 
+        HttpContext.Session.Clear();
         HttpContext.Session.SetInt32("UserId", userId.Value);
+        SetAntiCsrfCooke(antiforgery);
 
         return Ok(new AuthResponse
         {
@@ -83,9 +86,11 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
 
     [HttpPost("logout")]
+    [ValidateAntiForgeryToken]
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();
+        Response.Cookies.Delete("XSRF-TOKEN");
         return Ok(new AuthResponse
         {
             Success = true,
@@ -94,7 +99,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
 
     [HttpGet("me")]
-    public IActionResult Me()
+    public IActionResult Me([FromServices] IAntiforgery antiforgery)
     {
         var userId = HttpContext.Session.GetInt32("UserId");
         if (userId == null)
@@ -105,11 +110,25 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
                 Message = "Unauthorized."
             });
         }
+        
+        SetAntiCsrfCooke(antiforgery);
 
         return Ok(new AuthResponse
         {
             Success = true,
             Message = "Authenticated."
+        });
+    }
+
+    private void SetAntiCsrfCooke(IAntiforgery antiforgery)
+    {
+        var tokens = antiforgery.GetAndStoreTokens(HttpContext);
+
+        Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
+        {
+            HttpOnly = false, 
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
         });
     }
 }

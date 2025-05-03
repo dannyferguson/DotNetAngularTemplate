@@ -44,7 +44,7 @@ builder.Services.AddSingleton<AuthService>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 builder.Services.AddOpenApi();
 
 // Disable automatic error 400 formatting
@@ -86,6 +86,12 @@ builder.Services.AddRateLimiter(options =>
         
     
     options.RejectionStatusCode =  StatusCodes.Status429TooManyRequests;
+});
+
+// Add CSRF protection
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-XSRF-TOKEN"; 
 });
 
 var app = builder.Build();
