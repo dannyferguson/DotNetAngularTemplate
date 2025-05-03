@@ -99,9 +99,17 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         var userId = HttpContext.Session.GetInt32("UserId");
         if (userId == null)
         {
-            return Unauthorized(); 
+            return Unauthorized(new AuthResponse
+            {
+                Success = false,
+                Message = "Unauthorized."
+            });
         }
 
-        return Ok(new { UserId = userId });
+        return Ok(new AuthResponse
+        {
+            Success = true,
+            Message = "Authenticated."
+        });
     }
 }
