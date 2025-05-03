@@ -76,7 +76,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
 
         HttpContext.Session.Clear();
         HttpContext.Session.SetInt32("UserId", userId.Value);
-        SetAntiCsrfCooke(antiforgery);
+        SetAntiForgeryCookie(antiforgery);
 
         return Ok(new AuthResponse
         {
@@ -111,7 +111,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             });
         }
         
-        SetAntiCsrfCooke(antiforgery);
+        SetAntiForgeryCookie(antiforgery);
 
         return Ok(new AuthResponse
         {
@@ -120,7 +120,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         });
     }
 
-    private void SetAntiCsrfCooke(IAntiforgery antiforgery)
+    private void SetAntiForgeryCookie(IAntiforgery antiforgery)
     {
         var tokens = antiforgery.GetAndStoreTokens(HttpContext);
 
