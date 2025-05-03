@@ -2,11 +2,13 @@
 using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DotNetAngularTemplate.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
+[EnableRateLimiting("AuthPolicy")]
 public class AuthController(ILogger<AuthController> logger, AuthService authService) : ControllerBase
 {
     [HttpPost("register")]

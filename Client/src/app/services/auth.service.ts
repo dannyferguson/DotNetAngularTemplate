@@ -1,6 +1,6 @@
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {BehaviorSubject, catchError, Observable, of, retry} from 'rxjs';
+import {BehaviorSubject, catchError, Observable, of} from 'rxjs';
 import {AuthResponse} from "../models/responses/auth-response.model";
 
 @Injectable({
@@ -13,12 +13,16 @@ export class AuthService {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   private DEFAULT_ERROR_MESSAGE = 'Something went wrong. Please try again.';
+  private DEFAULT_RATE_LIMIT_MESSAGE = 'You are sending too many requests. Please try again later.';
 
   public login(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>('/api/v1/auth/login', {email: email, password: password}).pipe(
-      retry(2),
       catchError((error: HttpErrorResponse) => {
-        const message = error.error?.message || this.DEFAULT_ERROR_MESSAGE;
+        let message = error.error?.message || this.DEFAULT_ERROR_MESSAGE;
+
+        if (error.status === 429) {
+          message = this.DEFAULT_RATE_LIMIT_MESSAGE;
+        }
 
         return of({
           success: false,
@@ -30,9 +34,12 @@ export class AuthService {
 
   public register(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>('/api/v1/auth/register', {email: email, password: password}).pipe(
-      retry(2),
       catchError((error: HttpErrorResponse) => {
-        const message = error.error?.message || this.DEFAULT_ERROR_MESSAGE;
+        let message = error.error?.message || this.DEFAULT_ERROR_MESSAGE;
+
+        if (error.status === 429) {
+          message = this.DEFAULT_RATE_LIMIT_MESSAGE;
+        }
 
         return of({
           success: false,

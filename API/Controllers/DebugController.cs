@@ -1,4 +1,4 @@
-﻿using System.Net;
+﻿using DotNetAngularTemplate.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotNetAngularTemplate.Controllers;
@@ -11,19 +11,9 @@ public class DebugController : ControllerBase
     [Route("ip")]
     public IActionResult Ip()
     {
-        var ip = Request.Headers["X-Forwarded-For"].FirstOrDefault();
-    
-        if (string.IsNullOrEmpty(ip))
+        return Ok(new
         {
-            ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-        }
-
-        // Nobody cares about IPv6
-        if (ip == IPAddress.IPv6Loopback.ToString())
-        {
-            ip = IPAddress.Loopback.ToString();
-        }
-
-        return Ok(new { ip });
+            ip = IpHelper.GetClientIp(HttpContext)
+        });
     }
 }

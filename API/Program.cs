@@ -1,5 +1,8 @@
+using System.Threading.RateLimiting;
+using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,29 +11,30 @@ var builder = WebApplication.CreateBuilder(args);
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 if (redisConnectionString == null)
 {
-    Console.WriteLine("Missing environment variable ConectionStrings__Redis. Please set it before running the application!");
+    Console.WriteLine(
+        "Missing environment variable ConectionStrings__Redis. Please set it before running the application!");
     Environment.Exit(1);
 }
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = redisConnectionString;
-});
+
+builder.Services.AddStackExchangeRedisCache(options => { options.Configuration = redisConnectionString; });
 
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax; 
-    options.IdleTimeout = TimeSpan.FromDays(7); 
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.IdleTimeout = TimeSpan.FromDays(7);
 });
 
 // Add MySQL support/connection
 var mysqlConnectionString = builder.Configuration.GetConnectionString("Default");
 if (mysqlConnectionString == null)
 {
-    Console.WriteLine("Missing environment variable ConectionStrings__Default. Please set it before running the application!");
+    Console.WriteLine(
+        "Missing environment variable ConectionStrings__Default. Please set it before running the application!");
     Environment.Exit(1);
 }
+
 builder.Services.AddSingleton<DatabaseService>(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<DatabaseService>>();
@@ -44,9 +48,44 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // Disable automatic error 400 formatting
-builder.Services.Configure<ApiBehaviorOptions>(options =>
+builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
+
+// Enable rate-limiting
+builder.Services.AddRateLimiter(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var ip = IpHelper.GetClientIp(httpContext);
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ip,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            });
+    });
+
+
+    options.AddPolicy("AuthPolicy", httpContext =>
+    {
+        var ip = IpHelper.GetClientIp(httpContext);
+        
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ip,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1),
+                AutoReplenishment = true
+            });
+    });
+        
+    
+    options.RejectionStatusCode =  StatusCodes.Status429TooManyRequests;
 });
 
 var app = builder.Build();
@@ -65,17 +104,17 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(
         Path.Combine(builder.Environment.WebRootPath, "browser")),
     RequestPath = ""
-}); 
+});
 
 app.UseSession();
+app.UseRateLimiter();
 app.MapControllers();
 
 // Map all requests not at /api to Angular
-app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder => {
+app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+    {
         appBuilder.UseRouting();
-        appBuilder.UseEndpoints(endpoints => {
-            endpoints.MapFallbackToFile("/browser/index.html");
-        });
+        appBuilder.UseEndpoints(endpoints => { endpoints.MapFallbackToFile("/browser/index.html"); });
     }
 );
 
