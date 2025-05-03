@@ -57,7 +57,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             return Unauthorized(new AuthResponse
             {
                 Success = false,
-                Message = "Unauthorized"
+                Message = "Invalid email or password. Please try again."
             });
         }
         
@@ -67,7 +67,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             return Unauthorized(new AuthResponse
             {
                 Success = false,
-                Message = "Unauthorized"
+                Message = "Invalid email or password. Please try again."
             });
         }
 
