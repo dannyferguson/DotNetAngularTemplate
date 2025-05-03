@@ -56,6 +56,7 @@ export class RegisterPageComponent {
       this.authService.register(email, password).subscribe({
         next: (response) => {
           this.reset();
+
           if (!response.success) {
             this.errorMessage.set(response.message);
           }

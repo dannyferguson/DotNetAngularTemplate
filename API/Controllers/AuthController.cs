@@ -54,14 +54,10 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     {
         if (!ModelState.IsValid)
         {
-            var errorMessage = string.Join("; ", ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage));
-        
-            return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
+            return Unauthorized(new AuthResponse
             {
                 Success = false,
-                Message = errorMessage
+                Message = "Unauthorized"
             });
         }
         
