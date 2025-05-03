@@ -71,4 +71,24 @@ export class AuthService {
       })
     );
   }
+
+  public logout(): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>('/api/v1/auth/logout', {}).pipe(
+      tap(response => {
+        this.isAuthenticatedSubject.next(!response.success)
+      }),
+      catchError((error: HttpErrorResponse) => {
+        let message = error.error?.message || this.DEFAULT_ERROR_MESSAGE;
+
+        if (error.status === 429) {
+          message = this.DEFAULT_RATE_LIMIT_MESSAGE;
+        }
+
+        return of({
+          success: false,
+          message
+        } as AuthResponse);
+      })
+    );
+  }
 }
