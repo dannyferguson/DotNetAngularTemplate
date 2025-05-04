@@ -12,6 +12,7 @@ builder.Services.AddAppRateLimiting();
 builder.Services.AddAppAntiforgery();
 builder.Services.AddOpenApi();
 builder.Services.AddMysqlDatabaseService(builder.Configuration);
+builder.Services.AddResendEmailing(builder.Configuration);
 
 // Register other services
 builder.Services.AddSingleton<AuthService>();
@@ -23,6 +24,7 @@ var app = builder.Build();
 app.UseSecurityHeaders();
 app.UseCspNonce();
 app.UseIndexHtmlNonceInjection();
+app.UseGetEmailFromRequest();
 
 if (app.Environment.IsDevelopment())
 {

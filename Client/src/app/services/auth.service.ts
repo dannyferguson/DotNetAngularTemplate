@@ -28,6 +28,12 @@ export class AuthService {
     );
   }
 
+  public forgotPassword(email: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>('/api/v1/auth/forgot-password', {email: email}).pipe(
+      handleAuthError()
+    );
+  }
+
   public checkAuth(): Observable<AuthResponse> {
     return this.http.get<AuthResponse>('/api/v1/auth/me').pipe(
       tap(response => {

@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.2" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Resend" Version="0.1.1" />
   </ItemGroup>
 
   <ItemGroup>

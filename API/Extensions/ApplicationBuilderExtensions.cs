@@ -18,4 +18,9 @@ public static class ApplicationBuilderExtensions
     {
         return app.UseMiddleware<IndexHtmlNonceInjectionMiddleware>();
     }
+    
+    public static IApplicationBuilder UseGetEmailFromRequest(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<GetEmailFromRequestMiddleware>();
+    }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Threading.RateLimiting;
 using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Services;
+using Resend;
 
 namespace DotNetAngularTemplate.Extensions;
 
@@ -32,6 +33,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddRateLimiter(options =>
         {
+            // Global policy of 100 requests per minute. This should be more than enough for regular usage of the application.
+            // Limit: 100 requests per minute per IP
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
                 var ip = IpHelper.GetClientIp(httpContext);
@@ -44,6 +47,9 @@ public static class ServiceCollectionExtensions
                 });
             });
 
+            // Policy for most auth related endpoints that's a bit stricter than the global one to limit brute forcing.
+            // Limit: 10 requests per minute per IP
+            // todo: Might need something more aggressive for the register endpoint as to not send out too many emails. Also need to setup captcha.
             options.AddPolicy("AuthPolicy", httpContext =>
             {
                 var ip = IpHelper.GetClientIp(httpContext);
@@ -56,7 +62,38 @@ public static class ServiceCollectionExtensions
                 });
             });
 
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // Aggressive "forgot password" rate limit based on the email. This prevents even those using many proxies from trying to bruteforce a 
+            // specific account.
+            // Limit: 2 requests per hour per email
+            options.AddPolicy("ForgotPasswordPolicy", httpContext =>
+            {
+                var key = httpContext.Items["ForgotPasswordEmail"] as string ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 2,
+                    QueueLimit = 0,
+                    Window = TimeSpan.FromHours(1),
+                    AutoReplenishment = true
+                });
+            });
+            
+            // Log rate limit hits for auditing and set response code to 429
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Please try again later.", cancellationToken);
+                
+                var ip = IpHelper.GetClientIp(context.HttpContext);
+                var path = context.HttpContext.Request.Path;
+                var time = DateTime.UtcNow;
+
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("RateLimiter");
+
+                logger.LogWarning("Rate limit exceeded. IP: {IP}, Path: {Path}, Time: {TimeUtc}",
+                    ip, path, time);
+            };
         });
 
         return services;
@@ -86,6 +123,37 @@ public static class ServiceCollectionExtensions
             var logger = sp.GetRequiredService<ILogger<DatabaseService>>();
             return new DatabaseService(logger, mysqlConnectionString);
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddResendEmailing(this IServiceCollection services, IConfiguration config)
+    {
+        var apiKey = config.GetSection("Emails:ResendApiKey").Value;
+        var emailFrom = config.GetSection("Emails:From").Value;
+        if (apiKey == null || emailFrom == null)
+        {
+            if (apiKey == null)
+            {
+                Console.WriteLine("Missing environment variable Emails__ResendApiKey. Please set it before running the application!");
+            }
+
+            if (emailFrom == null)
+            {
+                Console.WriteLine("Missing environment variable Emails__From. Please set it before running the application!");
+            }
+
+            Environment.Exit(1);
+        }
+        
+        services.AddOptions();
+        services.AddHttpClient<ResendClient>();
+        services.Configure<ResendClientOptions>( o =>
+        {
+            o.ApiToken = apiKey;
+        } );
+        services.AddScoped<IResend, ResendClient>();
+        services.AddScoped<EmailService>();
 
         return services;
     }
