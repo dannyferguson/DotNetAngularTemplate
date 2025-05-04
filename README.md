@@ -33,3 +33,6 @@ I've also provided a docker-compose.yml that gives you a stack running this appl
 ## Rate Limits
 
 I added some basic rate limiting. 100 requests per minute globally, or 10 per minute for the auth controller. You can configure these in [Program.cs](/API/Program.cs)
+
+## CSP (Content Security Policy)
+I setup a pretty strict CSP that you will need to modify if you serve anything from another domain/subdomain, see [CspNonceMiddleware.cs](API/Middleware/CspNonceMiddleware.cs). You can see how it gets injected in the responses by looking at [IndexHtmlNonceInjectionMiddleware.cs](API/Middleware/IndexHtmlNonceInjectionMiddleware.cs)
