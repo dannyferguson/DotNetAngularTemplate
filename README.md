@@ -24,7 +24,7 @@ There are a few required environment variables to run this:
 
 * `ConnectionStrings__Redis` which is as you've guessed the Redis connection string (used for session storage). Format: `127.0.0.1:6379,password=supersecuremuchlonger123`
 
-* `Emails__ResendApiKey` [Resend](https://resend.com/) API key. This is the service I choose for my SMTP needs. It's pricier than the ultimate DIY-esque approach of using AWS SES but comes with many quality of life improvements and an easy to set up free tier.
+* `Emails__ResendApiKey` [Resend](https://resend.com/) API key. This is the service I choose for my SMTP needs. It's pricier than using AWS SES but comes with many quality of life improvements and an easy to set up free tier.
 
 * `Emails__From` Which email address to send all your automated emails from, typically something like `noreply@yourdomain.com`.
 
