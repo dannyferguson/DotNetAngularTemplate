@@ -10,6 +10,8 @@ public class EmailRateLimitService(ILogger<EmailRateLimitService> logger, IConne
 
     public async Task<bool> CanSendAsync(string key)
     {
+        key = key.Trim().ToLowerInvariant();
+        
         var count = await _redisDb.StringIncrementAsync(key);
 
         if (count == 1)

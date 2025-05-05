@@ -111,7 +111,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         }
 
         var ip = IpHelper.GetClientIp(HttpContext);
-        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") && await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{requestDto.Email.ToLowerInvariant()}"))
+        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") && await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{requestDto.Email}"))
         {
             var emailResult = await emailService.SendForgotPasswordEmail(requestDto.Email);
 
