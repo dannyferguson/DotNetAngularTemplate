@@ -2,6 +2,7 @@
 using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Services;
 using Resend;
+using StackExchange.Redis;
 
 namespace DotNetAngularTemplate.Extensions;
 
@@ -17,6 +18,11 @@ public static class ServiceCollectionExtensions
         }
 
         services.AddStackExchangeRedisCache(options => { options.Configuration = redisConnectionString; });
+        
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+        {
+            return ConnectionMultiplexer.Connect(redisConnectionString);
+        });
 
         services.AddSession(options =>
         {
@@ -49,7 +55,6 @@ public static class ServiceCollectionExtensions
 
             // Policy for most auth related endpoints that's a bit stricter than the global one to limit brute forcing.
             // Limit: 10 requests per minute per IP
-            // todo: Might need something more aggressive for the register endpoint as to not send out too many emails. Also need to setup captcha.
             options.AddPolicy("AuthPolicy", httpContext =>
             {
                 var ip = IpHelper.GetClientIp(httpContext);
@@ -58,21 +63,6 @@ public static class ServiceCollectionExtensions
                     PermitLimit = 10,
                     QueueLimit = 0,
                     Window = TimeSpan.FromMinutes(1),
-                    AutoReplenishment = true
-                });
-            });
-
-            // Aggressive "forgot password" rate limit based on the email. This prevents even those using many proxies from trying to bruteforce a 
-            // specific account.
-            // Limit: 2 requests per hour per email
-            options.AddPolicy("ForgotPasswordPolicy", httpContext =>
-            {
-                var key = httpContext.Items["ForgotPasswordEmail"] as string ?? "unknown";
-                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 2,
-                    QueueLimit = 0,
-                    Window = TimeSpan.FromHours(1),
                     AutoReplenishment = true
                 });
             });
@@ -154,6 +144,9 @@ public static class ServiceCollectionExtensions
         } );
         services.AddScoped<IResend, ResendClient>();
         services.AddScoped<EmailService>();
+        
+        // Add custom email rate limiting service to prevent over-spend
+        services.AddSingleton<EmailRateLimitService>();
 
         return services;
     }

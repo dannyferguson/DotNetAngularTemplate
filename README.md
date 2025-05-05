@@ -22,7 +22,7 @@ There are a few required environment variables to run this:
 ### Application Specific
 * `ConnectionStrings__Default` which is the MySQL connection string (used for all the data except sessions), typically in the following format: `Server=127.0.0.1;Port=3306;Database=dotnetangulardb;Uid=root;Pwd=supersecure123;`
 
-* `ConnectionStrings__Redis` which is as you've guessed the Redis connection string (used for session storage). Format: `127.0.0.1:6379,password=supersecuremuchlonger123`
+* `ConnectionStrings__Redis` which is as you've guessed the Redis connection string (used for session storage and email rate limiting). Format: `127.0.0.1:6379,password=supersecuremuchlonger123`
 
 * `Emails__ResendApiKey` [Resend](https://resend.com/) API key. This is the service I choose for my SMTP needs. It's pricier than using AWS SES but comes with many quality of life improvements and an easy to set up free tier.
 

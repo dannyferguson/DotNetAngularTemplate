@@ -1,4 +1,5 @@
-﻿using DotNetAngularTemplate.Models.DTO;
+﻿using DotNetAngularTemplate.Helpers;
+using DotNetAngularTemplate.Models.DTO;
 using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Antiforgery;
@@ -9,10 +10,10 @@ namespace DotNetAngularTemplate.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-public class AuthController(ILogger<AuthController> logger, AuthService authService, EmailService emailService) : ControllerBase
+[EnableRateLimiting("AuthPolicy")]
+public class AuthController(ILogger<AuthController> logger, AuthService authService, EmailService emailService, EmailRateLimitService emailRateLimitService) : ControllerBase
 {
     [HttpPost("register")]
-    [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto)
     {
         if (!ModelState.IsValid)
@@ -48,7 +49,6 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
 
     [HttpPost("login")]
-    [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto, [FromServices] IAntiforgery antiforgery)
     {
         if (!ModelState.IsValid)
@@ -83,7 +83,6 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
 
     [HttpPost("logout")]
     [ValidateAntiForgeryToken]
-    [EnableRateLimiting("AuthPolicy")]
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();
@@ -96,7 +95,6 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
     
     [HttpPost("forgot-password")]
-    [EnableRateLimiting("ForgotPasswordPolicy")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotEmailRequestDto requestDto)
     {
         if (!ModelState.IsValid)
@@ -111,22 +109,26 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
                 Message = errorMessage
             });
         }
-        
-        var emailResult = await emailService.SendForgotPasswordEmail(requestDto.Email);
 
-        if (!emailResult.IsSuccess)
+        var ip = IpHelper.GetClientIp(HttpContext);
+        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") && await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{requestDto.Email.ToLowerInvariant()}"))
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+            var emailResult = await emailService.SendForgotPasswordEmail(requestDto.Email);
+
+            if (!emailResult.IsSuccess)
             {
-                Success = false,
-                Message = "A server error occured. Please try again later."
-            });
+                return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+                {
+                    Success = false,
+                    Message = "A server error occured. Please try again later."
+                });
+            }
         }
         
         return Ok(new AuthResponse
         {
             Success = true,
-            Message = "Password reset email sent! Check your inbox."
+            Message = "If that email exists in our systems, a reset link was sent."
         });
     }
 
