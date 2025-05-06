@@ -73,4 +73,30 @@ public class DatabaseService
         var hash = reader.GetString(1);
         return (id, hash);
     }
+    
+    public async Task InsertPasswordResetCodeAsync(int userId, string code)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        await using var cmd = new MySqlCommand("INSERT INTO users_password_reset_codes (user_id, code) VALUES (@user_id, @code)", conn);
+        cmd.Parameters.AddWithValue("@user_id", userId);
+        cmd.Parameters.AddWithValue("@code", code);
+
+        try
+        {
+            await cmd.ExecuteNonQueryAsync();
+            _logger.LogInformation("Password Reset Code inserted successfully.");
+        }
+        catch (MySqlException ex)
+        {
+            _logger.LogError(ex, "Error inserting password reset code. SQL State: {@ExSqlState}, Error Code: {@ExNumber}", ex.SqlState, ex.Number);
+
+            if (ex.Number == 1062 && ex.SqlState == "23000")
+            {
+                throw new DuplicateEmailException($"Password reset code '{code}' is already taken.", ex);
+            }
+
+            throw;
+        }
+        
+    }
 }

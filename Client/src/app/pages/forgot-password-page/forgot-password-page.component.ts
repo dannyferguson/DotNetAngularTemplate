@@ -60,9 +60,6 @@ export class ForgotPasswordPageComponent {
 
           this.forgotPasswordForm.reset();
           this.successMessage.set(response.message);
-          setTimeout(() => {
-            this.router.navigate(['/']);
-          }, 2000);
         }
       });
     }

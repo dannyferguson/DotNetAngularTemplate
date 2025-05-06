@@ -1,11 +1,16 @@
-﻿using DotNetAngularTemplate.Exceptions;
+﻿using System.Security.Cryptography;
+using DotNetAngularTemplate.Exceptions;
 using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Models;
 using MySqlConnector;
 
 namespace DotNetAngularTemplate.Services;
 
-public class AuthService(ILogger<AuthService> logger, DatabaseService dbService)
+public class AuthService(
+    ILogger<AuthService> logger,
+    DatabaseService dbService,
+    EmailService emailService,
+    EmailRateLimitService emailRateLimitService)
 {
     public async Task<Result> RegisterUserAsync(string email, string password)
     {
@@ -33,17 +38,24 @@ public class AuthService(ILogger<AuthService> logger, DatabaseService dbService)
         }
     }
 
-    public async Task<bool> LoginUserAsync(string email, string password)
+    public async Task GenerateAndSendUserPasswordResetCode(string email, string ip)
     {
-        var storedHash = await dbService.GetPasswordHashByEmailAsync(email);
-        if (storedHash == null)
+        var user = await dbService.GetUserByEmailAsync(email);
+        if (user == null)
         {
-            return false;
+            return;
         }
 
-        return PasswordHelper.VerifyPassword(password, storedHash);
+        var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
+        await dbService.InsertPasswordResetCodeAsync(user.Value.Id, code);
+
+        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") &&
+            await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{email}"))
+        {
+            await emailService.SendForgotPasswordEmail(email, code);
+        }
     }
-    
+
     public async Task<int?> LoginUserAndGetIdAsync(string email, string password)
     {
         var user = await dbService.GetUserByEmailAsync(email);

@@ -15,7 +15,7 @@ builder.Services.AddMysqlDatabaseService(builder.Configuration);
 builder.Services.AddResendEmailing(builder.Configuration);
 
 // Register other services
-builder.Services.AddSingleton<AuthService>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
 
 var app = builder.Build();

@@ -7,12 +7,12 @@ public class EmailService(ILogger<EmailService> logger, IConfiguration config, I
 {
     private string _fromEmail = config.GetSection("Emails:From").Value!;
 
-    public async Task<Result> SendForgotPasswordEmail(string email)
+    public async Task<Result> SendForgotPasswordEmail(string email, string code)
     {
         var subject = "Password Reset";
-        var content = """
+        var content = $"""
                             This is a test
-                            Crodie
+                            Crodie. Your code is {code} 
                            """;
         return await SendEmail(email, subject, content);
     }

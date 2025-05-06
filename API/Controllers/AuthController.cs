@@ -1,4 +1,5 @@
-﻿using DotNetAngularTemplate.Helpers;
+﻿using System.Security.Cryptography;
+using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Models.DTO;
 using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
@@ -11,8 +12,11 @@ namespace DotNetAngularTemplate.Controllers;
 [ApiController]
 [Route("api/v1/auth")]
 [EnableRateLimiting("AuthPolicy")]
-public class AuthController(ILogger<AuthController> logger, AuthService authService, EmailService emailService, EmailRateLimitService emailRateLimitService) : ControllerBase
+public class AuthController(ILogger<AuthController> logger, AuthService authService) : ControllerBase
 {
+    // Ensure that endpoints whose response time varies depending on if an account exists or not respond within a constant amount of time in order to reduce the risk of timing based attacks.
+    private const int MinimumResponseTimeInMs = 1500;
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto)
     {
@@ -21,7 +25,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             var errorMessage = string.Join("; ", ModelState.Values
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage));
-        
+
             return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
             {
                 Success = false,
@@ -29,7 +33,8 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             });
         }
 
-        var result = await authService.RegisterUserAsync(requestDto.Email, requestDto.Password);
+        var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(() =>
+            authService.RegisterUserAsync(requestDto.Email, requestDto.Password), MinimumResponseTimeInMs, logger);
 
         if (result.IsSuccess || result.Error == "Email address is already registered.")
         {
@@ -49,7 +54,8 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto, [FromServices] IAntiforgery antiforgery)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto,
+        [FromServices] IAntiforgery antiforgery)
     {
         if (!ModelState.IsValid)
         {
@@ -59,8 +65,10 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
                 Message = "Invalid email or password. Please try again."
             });
         }
-        
-        var userId = await authService.LoginUserAndGetIdAsync(requestDto.Email, requestDto.Password);
+
+        var userId = await TimingProtectorHelper.RunWithMinimumDelayAsync(
+            () => authService.LoginUserAndGetIdAsync(requestDto.Email, requestDto.Password), MinimumResponseTimeInMs,
+            logger);
         if (userId == null)
         {
             return Unauthorized(new AuthResponse
@@ -93,7 +101,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             Message = "Logout successful! Redirecting.."
         });
     }
-    
+
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotEmailRequestDto requestDto)
     {
@@ -102,7 +110,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
             var errorMessage = string.Join("; ", ModelState.Values
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage));
-        
+
             return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
             {
                 Success = false,
@@ -111,20 +119,10 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         }
 
         var ip = IpHelper.GetClientIp(HttpContext);
-        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") && await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{requestDto.Email}"))
-        {
-            var emailResult = await emailService.SendForgotPasswordEmail(requestDto.Email);
+        await TimingProtectorHelper.RunWithMinimumDelayAsync(
+            () => authService.GenerateAndSendUserPasswordResetCode(requestDto.Email, ip), MinimumResponseTimeInMs,
+            logger);
 
-            if (!emailResult.IsSuccess)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
-                {
-                    Success = false,
-                    Message = "A server error occured. Please try again later."
-                });
-            }
-        }
-        
         return Ok(new AuthResponse
         {
             Success = true,
@@ -144,7 +142,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
                 Message = "Unauthorized."
             });
         }
-        
+
         SetAntiForgeryCookie(antiforgery);
 
         return Ok(new AuthResponse
@@ -160,7 +158,7 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
 
         Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
         {
-            HttpOnly = false, 
+            HttpOnly = false,
             Secure = true,
             SameSite = SameSiteMode.Lax,
         });
