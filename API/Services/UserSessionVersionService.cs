@@ -9,6 +9,7 @@ public class UserSessionVersionService(
 {
     private readonly IDatabase _redisDb = multiplexer.GetDatabase();
     private const string RedisKeyPrefix = "session-version:";
+    private const string ClaimTypeSessionVersion = "SessionVersion";
 
     public async Task<string> GetVersionAsync(string userId)
     {
@@ -22,30 +23,29 @@ public class UserSessionVersionService(
         logger.LogInformation("Bumped session version for user {UserId}", userId);
     }
 
-    public void SetVersionInSession(HttpContext context, string version)
-    {
-        context.Session.SetString("SessionVersion", version);
-    }
-
-    public string? GetVersionFromSession(HttpContext context)
-    {
-        return context.Session.GetString("SessionVersion");
-    }
-
     public string? GetUserIdFromClaims(HttpContext context)
     {
         return context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
+    public string? GetSessionVersionFromClaims(HttpContext context)
+    {
+        return context.User.FindFirst(ClaimTypeSessionVersion)?.Value;
+    }
+
     public async Task<bool> IsSessionValid(HttpContext context)
     {
         var userId = GetUserIdFromClaims(context);
-        Console.WriteLine($"id={userId}");
         if (string.IsNullOrWhiteSpace(userId)) return true;
 
-        var sessionVersion = GetVersionFromSession(context);
+        var versionFromClaim = GetSessionVersionFromClaims(context);
         var currentVersion = await GetVersionAsync(userId);
 
-        return sessionVersion == currentVersion;
+        return versionFromClaim == currentVersion;
+    }
+
+    public Claim CreateVersionClaim(string version)
+    {
+        return new Claim(ClaimTypeSessionVersion, version);
     }
 }

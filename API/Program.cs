@@ -6,7 +6,7 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register essential services
+builder.Services.AddAuthenticationAndAuthorization();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<ValidateModelAttribute>();
@@ -17,8 +17,6 @@ builder.Services.AddAppAntiforgery();
 builder.Services.AddOpenApi();
 builder.Services.AddMysqlDatabaseService(builder.Configuration);
 builder.Services.AddResendEmailing(builder.Configuration);
-
-// Register other services
 builder.Services.AddScoped<AuthService>();
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
 builder.Services.AddSingleton<UserSessionVersionService>();
@@ -47,7 +45,6 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(Path.Combine(builder.Environment.WebRootPath, "browser")),
     RequestPath = ""
 });
-app.UseSession();
 app.UseAuthentication(); 
 app.UseAuthorization();
 app.UseRateLimiter();

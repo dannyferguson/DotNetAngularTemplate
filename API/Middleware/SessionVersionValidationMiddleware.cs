@@ -1,4 +1,5 @@
 ﻿using DotNetAngularTemplate.Services;
+using Microsoft.AspNetCore.Authentication;
 
 namespace DotNetAngularTemplate.Middleware;
 
@@ -12,7 +13,7 @@ public class SessionVersionValidationMiddleware(RequestDelegate next)
 
             if (!valid)
             {
-                context.Session.Clear();
+                await context.SignOutAsync("AppCookie");
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsync("Session invalidated.");
                 return;

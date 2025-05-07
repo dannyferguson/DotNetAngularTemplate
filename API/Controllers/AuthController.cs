@@ -1,8 +1,11 @@
-﻿using DotNetAngularTemplate.Helpers;
+﻿using System.Security.Claims;
+using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Models.DTO;
 using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -54,13 +57,22 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
                 Message = "Invalid email or password. Please try again."
             });
         }
-
-        HttpContext.Session.Clear();
-        HttpContext.Session.SetInt32("UserId", userId.Value);
-        SetAntiForgeryCookie(antiforgery);
         
-        var version = await userSessionVersionService.GetVersionAsync(userId.ToString());
-        userSessionVersionService.SetVersionInSession(HttpContext, version);
+        var version = await userSessionVersionService.GetVersionAsync(userId.Value.ToString());
+        
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, userId.Value.ToString()),
+            new(ClaimTypes.Email, requestDto.Email),
+            new(ClaimTypes.Role, "USER"),
+            userSessionVersionService.CreateVersionClaim(version)
+        };
+        var identity = new ClaimsIdentity(claims, "AppCookie");
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync("AppCookie", principal);
+        
+        SetAntiForgeryCookie(antiforgery);
 
         return Ok(new AuthResponse
         {
@@ -71,9 +83,9 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
 
     [HttpPost("logout")]
     [ValidateAntiForgeryToken]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        HttpContext.Session.Clear();
+        await HttpContext.SignOutAsync("AppCookie");
         Response.Cookies.Delete("XSRF-TOKEN");
         return Ok(new AuthResponse
         {
@@ -121,10 +133,11 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         });
     }
 
+    [Authorize]
     [HttpGet("me")]
     public IActionResult Me([FromServices] IAntiforgery antiforgery)
     {
-        var userId = HttpContext.Session.GetInt32("UserId");
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null)
         {
             return Unauthorized(new AuthResponse

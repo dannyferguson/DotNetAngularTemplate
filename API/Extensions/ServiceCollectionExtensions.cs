@@ -8,6 +8,47 @@ namespace DotNetAngularTemplate.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddAuthenticationAndAuthorization(this IServiceCollection services)
+    {
+        services.AddAuthentication("AppCookie")
+            .AddCookie("AppCookie", options =>
+            {
+                options.Cookie.Name = ".Auth.Cookie";
+                options.LoginPath = "/noop";
+                options.AccessDeniedPath = "/noop";
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromDays(7);
+
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    }
+
+                    context.Response.Redirect(context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    }
+
+                    context.Response.Redirect(context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+            });
+        
+        services.AddAuthorization();
+        
+        return services;
+    }
+    
     public static IServiceCollection AddAppRedisCache(this IServiceCollection services, IConfiguration config)
     {
         var redisConnectionString = config.GetConnectionString("Redis");
@@ -22,14 +63,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
             return ConnectionMultiplexer.Connect(redisConnectionString);
-        });
-
-        services.AddSession(options =>
-        {
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-            options.Cookie.SameSite = SameSiteMode.Lax;
-            options.IdleTimeout = TimeSpan.FromDays(7);
         });
 
         return services;

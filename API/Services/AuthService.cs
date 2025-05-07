@@ -70,8 +70,8 @@ public class AuthService(
         await dbService.UpdateUserPassword(userId.Value, hashedPassword);
         await userSessionVersionService.BumpVersionAsync(userId.Value.ToString());
 
-        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") &&
-            await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-by-user-id-{userId}"))
+        if (await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-ip-{ip}") &&
+            await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-user-id-{userId}"))
         {
             var email = await dbService.GetEmailByUserId(userId.Value);
             if (email != null)
