@@ -23,4 +23,9 @@ public static class ApplicationBuilderExtensions
     {
         return app.UseMiddleware<GetEmailFromRequestMiddleware>();
     }
+    
+    public static IApplicationBuilder UseSessionVersionValidation(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<SessionVersionValidationMiddleware>();
+    }
 }

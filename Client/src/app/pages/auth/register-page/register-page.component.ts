@@ -1,11 +1,11 @@
 import {Component, inject, signal, ViewChild} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {AuthService} from '../../services/auth.service';
-import {SubmitButtonComponent} from '../../components/buttons/submit-button/submit-button.component';
-import {TextInputComponent} from '../../components/form-elements/text-input/text-input.component';
-import {AlertBannerComponent} from '../../components/alert-banner/alert-banner.component';
-import {passwordsMatchValidator} from '../../validators/passwords-match.validator';
+import {AuthService} from '../../../services/auth.service';
+import {SubmitButtonComponent} from '../../../components/buttons/submit-button/submit-button.component';
+import {TextInputComponent} from '../../../components/form-elements/text-input/text-input.component';
+import {AlertBannerComponent} from '../../../components/alert-banner/alert-banner.component';
+import {passwordsMatchValidator} from '../../../validators/passwords-match.validator';
 
 @Component({
   selector: 'app-register-page',
@@ -59,11 +59,11 @@ export class RegisterPageComponent {
 
           if (!response.success) {
             this.errorMessage.set(response.message);
+            return;
           }
 
           this.registerForm.reset();
           this.successMessage.set(response.message);
-          return;
         }
       });
     }

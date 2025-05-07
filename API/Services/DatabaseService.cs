@@ -1,4 +1,5 @@
 ﻿using DotNetAngularTemplate.Exceptions;
+using DotNetAngularTemplate.Models;
 using MySqlConnector;
 
 namespace DotNetAngularTemplate.Services;
@@ -24,9 +25,9 @@ public class DatabaseService
     public async Task InsertUserAsync(string email, string passwordHash)
     {
         await using var conn = await GetOpenConnectionAsync();
-        await using var cmd = new MySqlCommand("INSERT INTO users (email, password_hash) VALUES (@email, @password)", conn);
-        cmd.Parameters.AddWithValue("@email", email);
-        cmd.Parameters.AddWithValue("@password", passwordHash);
+        await using var cmd = new MySqlCommand("INSERT INTO users (email, password_hash) VALUES (@Email, @Password)", conn);
+        cmd.Parameters.AddWithValue("@Email", email);
+        cmd.Parameters.AddWithValue("@Password", passwordHash);
 
         try
         {
@@ -50,8 +51,17 @@ public class DatabaseService
     public async Task<string?> GetPasswordHashByEmailAsync(string email)
     {
         await using var conn = await GetOpenConnectionAsync();
-        await using var cmd = new MySqlCommand("SELECT password_hash FROM users WHERE email = @email", conn);
-        cmd.Parameters.AddWithValue("@email", email);
+        await using var cmd = new MySqlCommand("SELECT password_hash FROM users WHERE email = @Email", conn);
+        cmd.Parameters.AddWithValue("@Email", email);
+
+        return (string?) await cmd.ExecuteScalarAsync();
+    }
+    
+    public async Task<string?> GetEmailByUserId(int userId)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        await using var cmd = new MySqlCommand("SELECT email FROM users WHERE id = @UserId", conn);
+        cmd.Parameters.AddWithValue("@UserId", userId);
 
         return (string?) await cmd.ExecuteScalarAsync();
     }
@@ -72,6 +82,44 @@ public class DatabaseService
         var id = reader.GetInt32(0);
         var hash = reader.GetString(1);
         return (id, hash);
+    }
+    
+    public async Task<int?> GetUserIdByForgotPasswordCode(string code)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        await using var cmd = new MySqlCommand("SELECT user_id FROM users_password_reset_codes WHERE code = @Code AND expires_at > @UtcNow", conn);
+        cmd.Parameters.AddWithValue("@Code", code);
+        cmd.Parameters.AddWithValue("@UtcNow", DateTime.UtcNow);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+        
+        var id = reader.GetInt32(0);
+        return id;
+    }
+    
+    public async Task UpdateUserPassword(int userId, string passwordHash)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        await using var cmd = new MySqlCommand(
+            "UPDATE users SET password_hash = @Password, updated_at = NOW() WHERE id = @UserId", conn);
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Password", passwordHash);
+
+        try
+        {
+            await cmd.ExecuteNonQueryAsync();
+        }
+        catch (MySqlException ex)
+        {
+            _logger.LogError(ex, "Error updating password for user id {UserId}. SQL State: {@ExSqlState}, Error Code: {@ExNumber}", userId, ex.SqlState, ex.Number);
+            throw;
+        }
     }
     
     public async Task InsertPasswordResetCodeAsync(int userId, string code)
@@ -97,6 +145,5 @@ public class DatabaseService
 
             throw;
         }
-        
     }
 }

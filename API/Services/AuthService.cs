@@ -10,7 +10,8 @@ public class AuthService(
     ILogger<AuthService> logger,
     DatabaseService dbService,
     EmailService emailService,
-    EmailRateLimitService emailRateLimitService)
+    EmailRateLimitService emailRateLimitService,
+    UserSessionVersionService userSessionVersionService)
 {
     public async Task<Result> RegisterUserAsync(string email, string password)
     {
@@ -54,6 +55,32 @@ public class AuthService(
         {
             await emailService.SendForgotPasswordEmail(email, code);
         }
+    }
+    
+    public async Task<Result> UpdatePasswordIfCodeValid(string code, string password, string ip)
+    {
+        var userId = await dbService.GetUserIdByForgotPasswordCode(code);
+        if (userId == null)
+        {
+            return Result.Failure("Code does not exist or has already been used.");
+        }
+        
+        var hashedPassword = PasswordHelper.HashPassword(password);
+
+        await dbService.UpdateUserPassword(userId.Value, hashedPassword);
+        await userSessionVersionService.BumpVersionAsync(userId.Value.ToString());
+
+        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") &&
+            await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-by-user-id-{userId}"))
+        {
+            var email = await dbService.GetEmailByUserId(userId.Value);
+            if (email != null)
+            {
+                await emailService.SendPasswordChangedEmail(email);
+            }
+        }
+        
+        return Result.Success();
     }
 
     public async Task<int?> LoginUserAndGetIdAsync(string email, string password)

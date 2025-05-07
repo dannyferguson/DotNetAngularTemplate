@@ -34,6 +34,12 @@ export class AuthService {
     );
   }
 
+  public forgotPasswordConfirmation(code: string, email: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>('/api/v1/auth/forgot-password-confirmation', {code: code, email: email, password: password}).pipe(
+      handleAuthError()
+    )
+  }
+
   public checkAuth(): Observable<AuthResponse> {
     return this.http.get<AuthResponse>('/api/v1/auth/me').pipe(
       tap(response => {

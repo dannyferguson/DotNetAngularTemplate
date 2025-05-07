@@ -1,8 +1,8 @@
 import {AfterViewInit, Component, inject, signal} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
-import {AuthService} from '../../services/auth.service';
-import {AlertBannerComponent} from '../../components/alert-banner/alert-banner.component';
-import {minDuration} from '../../operators/min-duration.operator';
+import {AuthService} from '../../../services/auth.service';
+import {AlertBannerComponent} from '../../../components/alert-banner/alert-banner.component';
+import {minDuration} from '../../../operators/min-duration.operator';
 import {Router} from '@angular/router';
 
 @Component({

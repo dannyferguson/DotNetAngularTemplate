@@ -2,7 +2,7 @@
 
 namespace DotNetAngularTemplate.Models.DTO;
 
-public class ForgotEmailRequestDto
+public class ForgotPasswordRequestDto
 {
     [Required]
     [EmailAddress]

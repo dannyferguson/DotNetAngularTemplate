@@ -28,7 +28,8 @@ export class TextInputComponent {
   type = input.required<TextInputType>();
   id = input.required<string>();
   autocomplete = input.required<AutoCompleteType>();
-  required = input.required<boolean>();
+  required = input<boolean>(false);
+  readonly = input<boolean>(false);
   formControl = input.required<FormControl>();
   buttonText = input<string>();
   buttonLink = input<string>();

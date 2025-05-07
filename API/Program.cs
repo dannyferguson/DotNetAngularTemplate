@@ -1,4 +1,5 @@
 using DotNetAngularTemplate.Extensions;
+using DotNetAngularTemplate.Filters;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
@@ -6,7 +7,10 @@ using Microsoft.Extensions.FileProviders;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register essential services
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<ValidateModelAttribute>();
+});
 builder.Services.AddAppRedisCache(builder.Configuration);
 builder.Services.AddAppRateLimiting();
 builder.Services.AddAppAntiforgery();
@@ -17,6 +21,7 @@ builder.Services.AddResendEmailing(builder.Configuration);
 // Register other services
 builder.Services.AddScoped<AuthService>();
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
+builder.Services.AddSingleton<UserSessionVersionService>();
 
 var app = builder.Build();
 
@@ -25,6 +30,7 @@ app.UseSecurityHeaders();
 app.UseCspNonce();
 app.UseIndexHtmlNonceInjection();
 app.UseGetEmailFromRequest();
+app.UseSessionVersionValidation();
 
 if (app.Environment.IsDevelopment())
 {
@@ -42,6 +48,8 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = ""
 });
 app.UseSession();
+app.UseAuthentication(); 
+app.UseAuthorization();
 app.UseRateLimiter();
 
 // Map controllers and everything else to static (Angular) files

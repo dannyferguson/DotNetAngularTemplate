@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using DotNetAngularTemplate.Helpers;
+﻿using DotNetAngularTemplate.Helpers;
 using DotNetAngularTemplate.Models.DTO;
 using DotNetAngularTemplate.Models.Responses;
 using DotNetAngularTemplate.Services;
@@ -12,7 +11,7 @@ namespace DotNetAngularTemplate.Controllers;
 [ApiController]
 [Route("api/v1/auth")]
 [EnableRateLimiting("AuthPolicy")]
-public class AuthController(ILogger<AuthController> logger, AuthService authService) : ControllerBase
+public class AuthController(ILogger<AuthController> logger, AuthService authService, UserSessionVersionService userSessionVersionService) : ControllerBase
 {
     // Ensure that endpoints whose response time varies depending on if an account exists or not respond within a constant amount of time in order to reduce the risk of timing based attacks.
     private const int MinimumResponseTimeInMs = 1500;
@@ -20,19 +19,6 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto)
     {
-        if (!ModelState.IsValid)
-        {
-            var errorMessage = string.Join("; ", ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage));
-
-            return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
-            {
-                Success = false,
-                Message = errorMessage
-            });
-        }
-
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(() =>
             authService.RegisterUserAsync(requestDto.Email, requestDto.Password), MinimumResponseTimeInMs, logger);
 
@@ -57,15 +43,6 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto,
         [FromServices] IAntiforgery antiforgery)
     {
-        if (!ModelState.IsValid)
-        {
-            return Unauthorized(new AuthResponse
-            {
-                Success = false,
-                Message = "Invalid email or password. Please try again."
-            });
-        }
-
         var userId = await TimingProtectorHelper.RunWithMinimumDelayAsync(
             () => authService.LoginUserAndGetIdAsync(requestDto.Email, requestDto.Password), MinimumResponseTimeInMs,
             logger);
@@ -81,6 +58,9 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         HttpContext.Session.Clear();
         HttpContext.Session.SetInt32("UserId", userId.Value);
         SetAntiForgeryCookie(antiforgery);
+        
+        var version = await userSessionVersionService.GetVersionAsync(userId.ToString());
+        userSessionVersionService.SetVersionInSession(HttpContext, version);
 
         return Ok(new AuthResponse
         {
@@ -103,21 +83,8 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
     }
 
     [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotEmailRequestDto requestDto)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto requestDto)
     {
-        if (!ModelState.IsValid)
-        {
-            var errorMessage = string.Join("; ", ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage));
-
-            return StatusCode(StatusCodes.Status400BadRequest, new AuthResponse
-            {
-                Success = false,
-                Message = errorMessage
-            });
-        }
-
         var ip = IpHelper.GetClientIp(HttpContext);
         await TimingProtectorHelper.RunWithMinimumDelayAsync(
             () => authService.GenerateAndSendUserPasswordResetCode(requestDto.Email, ip), MinimumResponseTimeInMs,
@@ -127,6 +94,30 @@ public class AuthController(ILogger<AuthController> logger, AuthService authServ
         {
             Success = true,
             Message = "If that email exists in our systems, a reset link was sent."
+        });
+    }
+    
+    [HttpPost("forgot-password-confirmation")]
+    public async Task<IActionResult> ForgotPasswordConfirmation([FromBody] ForgotPasswordConfirmationRequestDto requestDto)
+    {
+        var ip = IpHelper.GetClientIp(HttpContext);
+        var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
+            () => authService.UpdatePasswordIfCodeValid(requestDto.Code, requestDto.Password, ip), MinimumResponseTimeInMs,
+            logger);
+
+        if (!result.IsSuccess)
+        {
+            return Unauthorized(new AuthResponse
+            {
+                Success = false,
+                Message = "Unauthorized."
+            });
+        }
+
+        return Ok(new AuthResponse
+        {
+            Success = true,
+            Message = "Password successfully reset! Redirecting you to login page."
         });
     }
 
