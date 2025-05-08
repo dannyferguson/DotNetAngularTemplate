@@ -3,8 +3,15 @@ using DotNetAngularTemplate.Filters;
 using DotNetAngularTemplate.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
+using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseWolverine(opts =>
+{
+    // Disable the non-mediator functionality in Wolverine as we do not currently need it
+    opts.Durability.Mode = DurabilityMode.MediatorOnly;
+});
 
 builder.Services.AddAuthenticationAndAuthorization();
 builder.Services.AddControllersWithViews(options =>

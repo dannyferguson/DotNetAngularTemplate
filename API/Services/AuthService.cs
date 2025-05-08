@@ -13,50 +13,6 @@ public class AuthService(
     EmailRateLimitService emailRateLimitService,
     UserSessionVersionService userSessionVersionService)
 {
-    public async Task<Result> RegisterUserAsync(string email, string password)
-    {
-        var hashedPassword = PasswordHelper.HashPassword(password);
-
-        try
-        {
-            await dbService.InsertUserAsync(email, hashedPassword);
-            return Result.Success();
-        }
-        catch (DuplicateEmailException)
-        {
-            logger.LogWarning("Registration failed due to duplicate email: {@email}", email);
-            return Result.Failure("Email address is already registered.");
-        }
-        catch (MySqlException ex)
-        {
-            logger.LogError(ex, "Error during user registration for email: {@email}", email);
-            return Result.Failure("An unexpected error occurred during registration.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Unexpected error during user registration for email: {@email}", email);
-            return Result.Failure("An unexpected error occurred.");
-        }
-    }
-
-    public async Task GenerateAndSendUserPasswordResetCode(string email, string ip)
-    {
-        var user = await dbService.GetUserByEmailAsync(email);
-        if (user == null)
-        {
-            return;
-        }
-
-        var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
-        await dbService.InsertPasswordResetCodeAsync(user.Value.Id, code);
-
-        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{ip}") &&
-            await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{email}"))
-        {
-            await emailService.SendForgotPasswordEmail(email, code);
-        }
-    }
-    
     public async Task<Result> UpdatePasswordIfCodeValid(string code, string password, string ip)
     {
         var userId = await dbService.GetUserIdByForgotPasswordCode(code);
@@ -81,15 +37,5 @@ public class AuthService(
         }
         
         return Result.Success();
-    }
-
-    public async Task<int?> LoginUserAndGetIdAsync(string email, string password)
-    {
-        var user = await dbService.GetUserByEmailAsync(email);
-        if (user == null)
-            return null;
-
-        var passwordValid = PasswordHelper.VerifyPassword(password, user.Value.PasswordHash);
-        return passwordValid ? user.Value.Id : null;
     }
 }

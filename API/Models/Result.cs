@@ -1,48 +1,47 @@
 ﻿namespace DotNetAngularTemplate.Models;
 
-public class Result<T>
-{
-    public bool IsSuccess { get; private set; }
-    public T? Value { get; private set; }
-    public string? Error { get; private set; }
-
-    private Result(bool isSuccess, T? value, string? error)
-    {
-        IsSuccess = isSuccess;
-        Value = value;
-        Error = error;
-    }
-
-    public static Result<T> Success(T value)
-    {
-        return new Result<T>(true, value, null);
-    }
-
-    public static Result<T> Failure(string error)
-    {
-        return new Result<T>(false, default, error);
-    }
-}
-
-// Non-generic Result for operations that don't return a value
 public class Result
 {
     public bool IsSuccess { get; private set; }
-    public string? Error { get; private set; }
+    public string SuccessMessage { get; private set; }
+    public string ErrorMessage { get; private set; }
 
-    private Result(bool isSuccess, string? error)
+    public Result(bool isSuccess, string successMessage, string errorMessage)
     {
         IsSuccess = isSuccess;
-        Error = error;
+        SuccessMessage = successMessage;
+        ErrorMessage = errorMessage;
     }
 
-    public static Result Success()
+    public static Result Success(string message = "Success")
     {
-        return new Result(true, null);
+        return new Result(true, message, "");
     }
 
-    public static Result Failure(string error)
+    public static Result Failure(string message = "Failure")
     {
-        return new Result(false, error);
+        return new Result(false, "", message);
     }
+}
+
+public class Result<T>
+{
+    public bool IsSuccess { get; }
+    public string SuccessMessage { get; }
+    public string ErrorMessage { get; }
+    public T? Value { get; }
+
+    private Result(bool isSuccess, string successMessage, string errorMessage, T? value)
+    {
+        IsSuccess = isSuccess;
+        SuccessMessage = successMessage;
+        ErrorMessage = errorMessage;
+        Value = value;
+    }
+
+    public static Result<T> Success(T value, string message = "Success") =>
+        new(true, message, "", value);
+
+    public static Result<T> Failure(string message = "Failure") =>
+        new(false, "", message, default);
 }
