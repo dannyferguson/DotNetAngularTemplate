@@ -1,11 +1,8 @@
 using System;
 using Nuke.Common;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
-using static Nuke.Common.EnvironmentInfo;
-using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 class Build : NukeBuild
@@ -14,6 +11,8 @@ class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    
+    readonly string AspNetEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 
     AbsolutePath OutputDirectory => RootDirectory / "Output";
     AbsolutePath ClientDirectory => RootDirectory / "Client";
@@ -52,9 +51,21 @@ class Build : NukeBuild
                 .SetProjectFile(ProjectFile)
                 .SetConfiguration(Configuration));
         });
+    
+    Target Codegen => _ => _
+        .DependsOn(CompileDotNet)
+        .Executes(() =>
+        {
+            DotNetRun(s => s
+                .SetProjectFile(ProjectFile)
+                .SetConfiguration(Configuration)
+                .SetApplicationArguments($"--codegen --environment {AspNetEnvironment}")
+                .EnableNoLaunchProfile()
+                .SetNoBuild(true));
+        });
 
     Target Publish => _ => _
-        .DependsOn(CompileDotNet)
+        .DependsOn(Codegen)
         .Executes(() =>
         {
             DotNetPublish(s => s

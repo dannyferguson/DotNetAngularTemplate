@@ -2,7 +2,7 @@ import {ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetec
 import {provideRouter} from '@angular/router';
 
 import {routes} from './app.routes';
-import {AuthService} from './services/auth.service';
+import {AuthService} from './features/auth/auth.service';
 import {HTTP_INTERCEPTORS, provideHttpClient} from '@angular/common/http';
 import {CsrfInterceptor} from './interceptors/csrf.interceptor';
 

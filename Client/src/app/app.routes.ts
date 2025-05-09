@@ -1,12 +1,12 @@
 import {Routes} from '@angular/router';
-import {IndexPageComponent} from './pages/general/index-page/index-page.component';
-import {LoginPageComponent} from './pages/auth/login-page/login-page.component';
-import {RegisterPageComponent} from './pages/auth/register-page/register-page.component';
-import {LogoutPageComponent} from './pages/auth/logout-page/logout-page.component';
-import {ForgotPasswordPageComponent} from './pages/auth/forgot-password-page/forgot-password-page.component';
+import {IndexPageComponent} from './features/index/index-page.component';
+import {LoginPageComponent} from './features/auth/login/login-page.component';
+import {RegisterPageComponent} from './features/auth/register/register-page.component';
+import {LogoutPageComponent} from './features/auth/logout/logout-page.component';
+import {ForgotPasswordPageComponent} from './features/auth/forgot-password/forgot-password-page.component';
 import {
   ForgotPasswordConfirmationPage
-} from './pages/auth/forgot-password-confirmation-page/forgot-password-confirmation-page.component';
+} from './features/auth/forgot-password/forgot-password-confirmation-page.component';
 
 export const routes: Routes = [
   {

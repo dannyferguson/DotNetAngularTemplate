@@ -54,7 +54,7 @@ public static class ServiceCollectionExtensions
         var redisConnectionString = config.GetConnectionString("Redis");
         if (redisConnectionString == null)
         {
-            Console.WriteLine("Missing environment variable ConectionStrings__Redis. Please set it before running the application!");
+            Console.WriteLine("Missing environment variable ConnectionStrings__Redis. Please set it before running the application!");
             Environment.Exit(1);
         }
 
@@ -137,7 +137,7 @@ public static class ServiceCollectionExtensions
         var mysqlConnectionString = config.GetConnectionString("Default");
         if (mysqlConnectionString == null)
         {
-            Console.WriteLine("Missing environment variable ConectionStrings__Default. Please set it before running the application!");
+            Console.WriteLine("Missing environment variable ConnectionStrings__Default. Please set it before running the application!");
             Environment.Exit(1);
         }
         

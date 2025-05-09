@@ -10,4 +10,6 @@ docker run -p 8080:5000 \
   -e "ASPNETCORE_ENVIRONMENT=Development" \
   -e "ConnectionStrings__Default=Server=127.0.0.1;Port=3306;Database=dotnetangulardb;Uid=root;Pwd=supersecure123;" \
   -e "ConnectionStrings__Redis=127.0.0.1:6379,password=supersecuremuchlonger123" \
+  -e "Emails__ResendApiKey=re_secret" \
+  -e "Emails__From=noreply@yourdomain.com" \
   dotnet-angular-template
