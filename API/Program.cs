@@ -1,10 +1,21 @@
 using DotNetAngularTemplate.Extensions;
 using DotNetAngularTemplate.Filters;
+using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Services;
+using JasperFx.CodeGeneration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
+using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseWolverine(opts =>
+{
+    // Disable the non-mediator functionality in Wolverine as we do not currently need it
+    opts.Durability.Mode = DurabilityMode.MediatorOnly;
+    
+    opts.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
+});
 
 builder.Services.AddAuthenticationAndAuthorization();
 builder.Services.AddControllersWithViews(options =>
@@ -17,11 +28,26 @@ builder.Services.AddAppAntiforgery();
 builder.Services.AddOpenApi();
 builder.Services.AddMysqlDatabaseService(builder.Configuration);
 builder.Services.AddResendEmailing(builder.Configuration);
-builder.Services.AddScoped<AuthService>();
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
 builder.Services.AddSingleton<UserSessionVersionService>();
 
 var app = builder.Build();
+
+// Ensure app can connect to MySQL and Redis
+using (var scope = app.Services.CreateScope())
+{
+    var logger = scope.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("StartupHealthCheck");
+    
+    if (!await StartupHealthCheck.CheckCriticalServicesAsync(scope.ServiceProvider))
+    {
+        logger.LogCritical("Startup health check (MySQL + Redis connection) failed.");
+        return;
+    }
+    
+    logger.LogInformation("Startup health check (MySQL + Redis connection) passed!");
+}
 
 // Setup middleware
 app.UseSecurityHeaders();

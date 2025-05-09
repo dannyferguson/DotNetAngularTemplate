@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.2" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <PackageReference Include="Resend" Version="0.1.1" />
+    <PackageReference Include="WolverineFx" Version="3.13.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +24,10 @@
     <_ContentIncludedByDefault Remove="wwwroot\browser\polyfills-FFHMD2TL.js" />
     <_ContentIncludedByDefault Remove="wwwroot\browser\styles-5INURTSO.css" />
     <_ContentIncludedByDefault Remove="wwwroot\prerendered-routes.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
 </Project>

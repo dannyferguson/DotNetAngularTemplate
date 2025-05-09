@@ -9,6 +9,7 @@ CREATE TABLE users
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_users_email_password ON users (email, password_hash);
 
 -- Password Reset Codes table
 CREATE TABLE users_password_reset_codes
