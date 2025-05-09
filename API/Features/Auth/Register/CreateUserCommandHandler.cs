@@ -20,7 +20,7 @@ public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, 
 
         try
         {
-            await databaseService.ExecuteAsync(sql, parameters);
+            await databaseService.ExecuteAsync(sql, parameters, message.CancellationToken);
             logger.LogInformation("User '{Email}' inserted successfully.", message.Email);
             // todo send registration email (email verification)
             return ApiResult.Success("Registration successful. Please check your email to verify your account.");

@@ -25,32 +25,33 @@ public class AuthController(
     private const int MinimumResponseTimeInMs = 1500;
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto)
+    public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto,
+        CancellationToken cancellationToken)
     {
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new CreateUserCommand(requestDto.Email, requestDto.Password)),
-            MinimumResponseTimeInMs, 
+            () => bus.InvokeAsync<ApiResult>(new CreateUserCommand(requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
+            MinimumResponseTimeInMs,
             logger);
-        
+
         return result.IsSuccess ? Ok(result) : StatusCode(StatusCodes.Status500InternalServerError, result);
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto requestDto,
-        [FromServices] IAntiforgery antiforgery)
+        [FromServices] IAntiforgery antiforgery, CancellationToken cancellationToken)
     {
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new LoginUserCommand(HttpContext, requestDto.Email, requestDto.Password)),
-            MinimumResponseTimeInMs, 
+            () => bus.InvokeAsync<ApiResult>(new LoginUserCommand(HttpContext, requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
+            MinimumResponseTimeInMs,
             logger);
 
         if (!result.IsSuccess)
         {
             return Unauthorized(result);
         }
-        
+
         SetAntiForgeryCookie(antiforgery);
-        
+
         return Ok(result);
     }
 
@@ -64,13 +65,14 @@ public class AuthController(
     }
 
     [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto requestDto)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto requestDto,
+        CancellationToken cancellationToken)
     {
         var ip = IpHelper.GetClientIp(HttpContext);
-        
+
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new ForgotPasswordCommand(ip, requestDto.Email)),
-            MinimumResponseTimeInMs, 
+            () => bus.InvokeAsync<ApiResult>(new ForgotPasswordCommand(ip, requestDto.Email, cancellationToken), cancellationToken),
+            MinimumResponseTimeInMs,
             logger);
 
         return result.IsSuccess ? Ok(result) : StatusCode(StatusCodes.Status500InternalServerError, result);
@@ -78,15 +80,16 @@ public class AuthController(
 
     [HttpPost("forgot-password-confirmation")]
     public async Task<IActionResult> ForgotPasswordConfirmation(
-        [FromBody] ForgotPasswordConfirmationRequestDto requestDto)
+        [FromBody] ForgotPasswordConfirmationRequestDto requestDto, CancellationToken cancellationToken)
     {
         var ip = IpHelper.GetClientIp(HttpContext);
-        
+
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new ForgotPasswordConfirmationCommand(ip, requestDto.Code, requestDto.Password)),
+            () => bus.InvokeAsync<ApiResult>(
+                new ForgotPasswordConfirmationCommand(ip, requestDto.Code, requestDto.Password, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);
-        
+
         return result.IsSuccess ? Ok(result) : Unauthorized(result);
     }
 

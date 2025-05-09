@@ -13,7 +13,7 @@ public class ForgotPasswordConfirmationCommandHandler(
 {
     public async Task<ApiResult> Handle(ForgotPasswordConfirmationCommand message)
     {
-        var userId = await GetUserIdByForgotPasswordCode(message.Code);
+        var userId = await GetUserIdByForgotPasswordCode(message.Code, message.CancellationToken);
         if (userId == null)
         {
             logger.LogWarning("User attempted to reset password with invalid or expired code {Code}", message.Code);
@@ -22,7 +22,7 @@ public class ForgotPasswordConfirmationCommandHandler(
         
         var passwordHash = PasswordHelper.HashPassword(message.Password);
 
-        var result = await databaseService.UpdateUserPassword(userId.Value, passwordHash);
+        var result = await databaseService.UpdateUserPassword(userId.Value, passwordHash, message.CancellationToken);
         if (!result.IsSuccess)
         {
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
@@ -33,7 +33,7 @@ public class ForgotPasswordConfirmationCommandHandler(
         if (await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-ip-{message.Ip}") &&
             await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-user-id-{userId.Value}"))
         {
-            var user = await databaseService.GetUserById(userId.Value);
+            var user = await databaseService.GetUserById(userId.Value, message.CancellationToken);
             if (user != null)
             {
                 await emailService.SendPasswordChangedEmail(user.Email);
@@ -43,7 +43,7 @@ public class ForgotPasswordConfirmationCommandHandler(
         return ApiResult.Success("Password successfully reset! Redirecting you to login page.");
     }
     
-    private async Task<int?> GetUserIdByForgotPasswordCode(string code)
+    private async Task<int?> GetUserIdByForgotPasswordCode(string code, CancellationToken cancellationToken)
     {
         const string sql = "SELECT user_id FROM users_password_reset_codes WHERE code = @Code AND expires_at > @UtcNow";
         var parameters = new Dictionary<string, object>
@@ -58,7 +58,7 @@ public class ForgotPasswordConfirmationCommandHandler(
             {
                 var id = reader.GetInt32(0);
                 return id;
-            });
+            }, cancellationToken);
 
             return userId;
         } 

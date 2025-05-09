@@ -10,7 +10,7 @@ public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, Da
 {
     public async Task<ApiResult> Handle(LoginUserCommand message)
     {
-        var user = await databaseService.GetUserByEmail(message.Email);
+        var user = await databaseService.GetUserByEmail(message.Email, message.CancellationToken);
         if (user == null)
         {
             return ApiResult.Failure("Invalid credentials. Please try again.");

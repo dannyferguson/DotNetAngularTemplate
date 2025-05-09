@@ -13,7 +13,7 @@ public class ForgotPasswordCommandHandler(
 {
     public async Task<ApiResult> Handle(ForgotPasswordCommand message)
     {
-        var user = await databaseService.GetUserByEmail(message.Email);
+        var user = await databaseService.GetUserByEmail(message.Email, message.CancellationToken);
         if (user == null)
         {
             // We don't want to let users know if an email was found for security reasons.
@@ -22,7 +22,7 @@ public class ForgotPasswordCommandHandler(
 
         var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
         
-        var inserted = await InsertPasswordResetCodeAsync(user.Id, code);
+        var inserted = await InsertPasswordResetCodeAsync(user.Id, code, message.CancellationToken);
         if (!inserted)
         {
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
@@ -37,7 +37,7 @@ public class ForgotPasswordCommandHandler(
         return ApiResult.Success("If that email exists in our systems, a reset link was sent.");
     }
 
-    private async Task<bool> InsertPasswordResetCodeAsync(int userId, string code)
+    private async Task<bool> InsertPasswordResetCodeAsync(int userId, string code, CancellationToken cancellationToken)
     {
         const string sql = "INSERT INTO users_password_reset_codes (user_id, code) VALUES (@UserId, @Code)";
         var parameters = new Dictionary<string, object>
@@ -48,7 +48,7 @@ public class ForgotPasswordCommandHandler(
 
         try
         {
-            await databaseService.ExecuteAsync(sql, parameters);
+            await databaseService.ExecuteAsync(sql, parameters, cancellationToken);
             logger.LogInformation("Forgot email code inserted successfully for user of id {UserId}.", userId);
             return true;
         }
