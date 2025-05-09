@@ -51,21 +51,9 @@ class Build : NukeBuild
                 .SetProjectFile(ProjectFile)
                 .SetConfiguration(Configuration));
         });
-    
-    Target Codegen => _ => _
-        .DependsOn(CompileDotNet)
-        .Executes(() =>
-        {
-            DotNetRun(s => s
-                .SetProjectFile(ProjectFile)
-                .SetConfiguration(Configuration)
-                .SetApplicationArguments($"--codegen --environment {AspNetEnvironment}")
-                .EnableNoLaunchProfile()
-                .SetNoBuild(true));
-        });
 
     Target Publish => _ => _
-        .DependsOn(Codegen)
+        .DependsOn(CompileDotNet)
         .Executes(() =>
         {
             DotNetPublish(s => s
