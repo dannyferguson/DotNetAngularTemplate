@@ -1,6 +1,6 @@
-﻿using DotNetAngularTemplate.Helpers;
-using DotNetAngularTemplate.Models;
-using DotNetAngularTemplate.Services;
+﻿using DotNetAngularTemplate.Infrastructure.Helpers;
+using DotNetAngularTemplate.Infrastructure.Models;
+using DotNetAngularTemplate.Infrastructure.Services;
 
 namespace DotNetAngularTemplate.Features.Auth.ForgotPassword.ConfirmReset;
 

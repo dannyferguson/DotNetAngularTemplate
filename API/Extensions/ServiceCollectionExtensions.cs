@@ -1,6 +1,6 @@
 ﻿using System.Threading.RateLimiting;
-using DotNetAngularTemplate.Helpers;
-using DotNetAngularTemplate.Services;
+using DotNetAngularTemplate.Infrastructure.Helpers;
+using DotNetAngularTemplate.Infrastructure.Services;
 using Resend;
 using StackExchange.Redis;
 

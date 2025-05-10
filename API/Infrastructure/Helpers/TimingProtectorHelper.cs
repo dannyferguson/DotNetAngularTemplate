@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace DotNetAngularTemplate.Helpers;
+namespace DotNetAngularTemplate.Infrastructure.Helpers;
 
 public class TimingProtectorHelper
 {

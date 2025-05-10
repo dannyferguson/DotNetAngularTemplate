@@ -2,7 +2,7 @@
 using System.Text;
 using Konscious.Security.Cryptography;
 
-namespace DotNetAngularTemplate.Helpers;
+namespace DotNetAngularTemplate.Infrastructure.Helpers;
 
 public static class PasswordHelper
 {

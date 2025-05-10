@@ -1,4 +1,4 @@
-﻿using DotNetAngularTemplate.Helpers;
+﻿using DotNetAngularTemplate.Infrastructure.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotNetAngularTemplate.Features.Misc;

@@ -1,28 +1,35 @@
-﻿using DotNetAngularTemplate.Helpers;
-using DotNetAngularTemplate.Models;
-using DotNetAngularTemplate.Services;
+﻿using System.Security.Cryptography;
+using DotNetAngularTemplate.Infrastructure.Helpers;
+using DotNetAngularTemplate.Infrastructure.Models;
+using DotNetAngularTemplate.Infrastructure.Services;
 using MySqlConnector;
 
 namespace DotNetAngularTemplate.Features.Auth.Register;
 
-public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, DatabaseService databaseService)
+public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, DatabaseService databaseService, EmailService emailService, EmailRateLimitService emailRateLimitService)
 {
     public async Task<ApiResult> Handle(CreateUserCommand message)
     {
         var passwordHash = PasswordHelper.HashPassword(message.Password);
         
-        const string sql = "INSERT INTO users (email, password_hash) VALUES (@Email, @Password)";
-        var parameters = new Dictionary<string, object>
-        {
-            ["@Email"] = message.Email,
-            ["@Password"] = passwordHash
-        };
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
 
         try
         {
-            await databaseService.ExecuteAsync(sql, parameters, message.CancellationToken);
-            logger.LogInformation("User '{Email}' inserted successfully.", message.Email);
-            // todo send registration email (email verification)
+            var userId = await InsertUser(message, passwordHash, unitOfWork);
+
+            var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
+            
+            await InsertConfirmationCode(message, userId, code, unitOfWork);
+
+            var emailSent = await SendEmail(message.Ip, message.Email, code);
+            if (!emailSent)
+            {
+                await unitOfWork.RollbackAsync(message.CancellationToken);
+                return ApiResult.Failure("An unexpected error occurred. Please try again later.");
+            }
+            
+            await unitOfWork.CommitAsync(message.CancellationToken);
             return ApiResult.Success("Registration successful. Please check your email to verify your account.");
         }
         catch (MySqlException ex) when (ex.Number == 1062) 
@@ -33,7 +40,7 @@ public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, 
         }
         catch (MySqlException ex)
         {
-            logger.LogError(ex, "Error during user registration for email: {Email}", message.Email);
+            logger.LogError(ex, "Error during user registration for email: {Email}. SQL State: {ExSqlState}, Error Code: {ExNumber}", message.Email, ex.SqlState, ex.Number);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         catch (Exception ex)
@@ -41,5 +48,42 @@ public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, 
             logger.LogError(ex, "Unexpected error during user registration for email: {Email}", message.Email);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
+    }
+
+    private async Task InsertConfirmationCode(CreateUserCommand message, int userId, string code,
+        DatabaseUnitOfWork unitOfWork)
+    {
+        const string insertConfirmationCodeSql = "INSERT INTO users_email_confirmation_codes (user_id, code) VALUES (@UserId, @Code)";
+        var insertConfirmationCodeParams = new Dictionary<string, object>
+        {
+            ["@UserId"] = userId,
+            ["@Code"] = code
+        };
+        await unitOfWork.ExecuteAsync(insertConfirmationCodeSql, insertConfirmationCodeParams, message.CancellationToken);
+        logger.LogInformation("Email confirmation code for '{Email}' inserted successfully.", message.Email);
+    }
+
+    private async Task<int> InsertUser(CreateUserCommand message, string passwordHash, DatabaseUnitOfWork unitOfWork)
+    {
+        const string insertUserSql = "INSERT INTO users (email, password_hash) VALUES (@Email, @Password); SELECT LAST_INSERT_ID();";
+        var insertUserParams = new Dictionary<string, object>
+        {
+            ["@Email"] = message.Email,
+            ["@Password"] = passwordHash
+        };
+        var userId = await unitOfWork.ExecuteScalarAsync<int>(insertUserSql, insertUserParams, message.CancellationToken);
+        logger.LogInformation("User '{Email}' inserted successfully.", message.Email);
+        return userId;
+    }
+
+    private async Task<bool> SendEmail(string ip, string email, string code)
+    {
+        if (!await emailRateLimitService.CanSendAsync($"registration-email-by-ip-{ip}") ||
+            !await emailRateLimitService.CanSendAsync($"registration-email-by-email-{email}"))
+        {
+            return false;
+        }
+
+        return await emailService.SendRegistrationEmail(email, code);
     }
 }

@@ -3,8 +3,8 @@ using DotNetAngularTemplate.Features.Auth.ForgotPassword.ConfirmReset;
 using DotNetAngularTemplate.Features.Auth.ForgotPassword.RequestReset;
 using DotNetAngularTemplate.Features.Auth.Login;
 using DotNetAngularTemplate.Features.Auth.Register;
-using DotNetAngularTemplate.Helpers;
-using DotNetAngularTemplate.Models;
+using DotNetAngularTemplate.Infrastructure.Helpers;
+using DotNetAngularTemplate.Infrastructure.Models;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -28,8 +28,10 @@ public class AuthController(
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto requestDto,
         CancellationToken cancellationToken)
     {
+        var ip = IpHelper.GetClientIp(HttpContext);
+        
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new CreateUserCommand(requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
+            () => bus.InvokeAsync<ApiResult>(new CreateUserCommand(ip, requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);
 

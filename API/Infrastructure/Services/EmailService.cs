@@ -1,10 +1,10 @@
 ﻿using Resend;
 
-namespace DotNetAngularTemplate.Services;
+namespace DotNetAngularTemplate.Infrastructure.Services;
 
 public class EmailService(ILogger<EmailService> logger, IConfiguration config, IResend resend)
 {
-    private string _fromEmail = config.GetSection("Emails:From").Value!;
+    private readonly string _fromEmail = config["Custom:EmailFrom"]!;
 
     public async Task SendForgotPasswordEmail(string email, string code)
     {
@@ -25,7 +25,18 @@ public class EmailService(ILogger<EmailService> logger, IConfiguration config, I
         await SendEmail(email, subject, content);
     }
 
-    private async Task SendEmail(string toEmail, string subject, string htmlBody)
+    public async Task<bool> SendRegistrationEmail(string email, string code)
+    {
+        var subject = "Welcome";
+        var content = LoadTemplate("RegistrationEmailTemplate.html")
+            .Replace("{{APP_NAME}}", config["Custom:AppName"])
+            .Replace("{{CONFIRMATION_LINK}}", $"{config["Custom:BaseUrl"]}/confirm-email?code={code}")
+            .Replace("{{SUPPORT_EMAIL}}", config["Custom:SupportEmail"])
+            .Replace("{{BASE_URL}}", config["Custom:BaseUrl"]);
+        return await SendEmail(email, subject, content);
+    }
+
+    private async Task<bool> SendEmail(string toEmail, string subject, string htmlBody)
     {
         var message = new EmailMessage();
         message.From = _fromEmail;
@@ -39,14 +50,22 @@ public class EmailService(ILogger<EmailService> logger, IConfiguration config, I
 
             if (response.Success)
             {
-                return;
+                return true;
             }
 
             logger.LogError(response.Exception, "Unable to send email to \"{email}\" with subject \"{subject}\"", toEmail, subject);
+            return false;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unable to send email to \"{email}\" with subject \"{subject}\"", toEmail, subject);
+            return false;
         }
+    }
+    
+    private string LoadTemplate(string templateName)
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "EmailTemplates", templateName);
+        return File.ReadAllText(path);
     }
 }

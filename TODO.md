@@ -1,4 +1,5 @@
 # Todo
+- Add column for emailVerified in users table and enforce check on login + wire up the necessary Angular page and .NET endpoint to validate email.
 
 - Add e2e tests using playwright? At least cover all the auth related stuff and run them in Nuke before completing
 - Create account page which lets a user update their email, password and terminate all other sessions

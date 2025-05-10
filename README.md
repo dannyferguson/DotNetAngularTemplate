@@ -26,7 +26,8 @@ There are a few required environment variables to run this:
 
 * `Emails__ResendApiKey` [Resend](https://resend.com/) API key. This is the service I choose for my SMTP needs. It's pricier than using AWS SES but comes with many quality of life improvements and an easy to set up free tier.
 
-* `Emails__From` Which email address to send all your automated emails from, typically something like `noreply@yourdomain.com`.
+## Configuration
+While environment variables are used for the sensitive things like API keys and database connections, you should use the `appsettings.json` (prod) and `appsettings.Development.json` files to configure the rest of the application.
 
 ## Docker
 

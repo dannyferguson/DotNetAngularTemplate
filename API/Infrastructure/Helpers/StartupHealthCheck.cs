@@ -1,4 +1,4 @@
-﻿using DotNetAngularTemplate.Services;
+﻿using DotNetAngularTemplate.Infrastructure.Services;
 using StackExchange.Redis;
 
 namespace DotNetAngularTemplate.Infrastructure.Helpers;

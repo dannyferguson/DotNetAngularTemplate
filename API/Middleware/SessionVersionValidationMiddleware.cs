@@ -1,4 +1,4 @@
-﻿using DotNetAngularTemplate.Services;
+﻿using DotNetAngularTemplate.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication;
 
 namespace DotNetAngularTemplate.Middleware;

@@ -1,7 +1,7 @@
 using DotNetAngularTemplate.Extensions;
 using DotNetAngularTemplate.Filters;
 using DotNetAngularTemplate.Infrastructure.Helpers;
-using DotNetAngularTemplate.Services;
+using DotNetAngularTemplate.Infrastructure.Services;
 using JasperFx.CodeGeneration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;

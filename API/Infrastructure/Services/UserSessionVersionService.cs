@@ -1,7 +1,7 @@
-﻿using StackExchange.Redis;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using StackExchange.Redis;
 
-namespace DotNetAngularTemplate.Services;
+namespace DotNetAngularTemplate.Infrastructure.Services;
 
 public class UserSessionVersionService(
     ILogger<UserSessionVersionService> logger,

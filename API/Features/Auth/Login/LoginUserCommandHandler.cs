@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
-using DotNetAngularTemplate.Helpers;
-using DotNetAngularTemplate.Models;
-using DotNetAngularTemplate.Services;
+using DotNetAngularTemplate.Infrastructure.Helpers;
+using DotNetAngularTemplate.Infrastructure.Models;
+using DotNetAngularTemplate.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication;
 
 namespace DotNetAngularTemplate.Features.Auth.Login;

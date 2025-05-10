@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
-using DotNetAngularTemplate.Models;
-using DotNetAngularTemplate.Services;
+using DotNetAngularTemplate.Infrastructure.Models;
+using DotNetAngularTemplate.Infrastructure.Services;
 using MySqlConnector;
 
 namespace DotNetAngularTemplate.Features.Auth.ForgotPassword.RequestReset;
@@ -13,31 +13,44 @@ public class ForgotPasswordCommandHandler(
 {
     public async Task<ApiResult> Handle(ForgotPasswordCommand message)
     {
-        var user = await databaseService.GetUserByEmail(message.Email, message.CancellationToken);
-        if (user == null)
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
+        
+        try
         {
-            // We don't want to let users know if an email was found for security reasons.
+            var user = await databaseService.GetUserByEmail(message.Email, message.CancellationToken);
+            if (user == null)
+            {
+                // We don't want to let users know if an email was found for security reasons.
+                return ApiResult.Success("If that email exists in our systems, a reset link was sent.");
+            }
+
+            var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
+        
+            await InsertPasswordResetCodeAsync(message, user.Id, code, unitOfWork);
+        
+            if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{message.Ip}") &&
+                await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{message.Email}"))
+            {
+                await emailService.SendForgotPasswordEmail(message.Email, code);
+            }
+
+            await unitOfWork.CommitAsync(message.CancellationToken);
             return ApiResult.Success("If that email exists in our systems, a reset link was sent.");
         }
-
-        var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
-        
-        var inserted = await InsertPasswordResetCodeAsync(user.Id, code, message.CancellationToken);
-        if (!inserted)
+        catch (MySqlException ex)
         {
+            logger.LogError(ex, "Error inserting password reset code. SQL State: {ExSqlState}, Error Code: {ExNumber}", ex.SqlState, ex.Number);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
-        
-        if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{message.Ip}") &&
-            await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{message.Email}"))
+        catch (Exception ex)
         {
-            await emailService.SendForgotPasswordEmail(message.Email, code);
+            logger.LogError(ex, "Unexpected error during forgot password for email: {Email}", message.Email);
+            return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
-
-        return ApiResult.Success("If that email exists in our systems, a reset link was sent.");
     }
-
-    private async Task<bool> InsertPasswordResetCodeAsync(int userId, string code, CancellationToken cancellationToken)
+    
+    private async Task InsertPasswordResetCodeAsync(ForgotPasswordCommand message, int userId, string code,
+        DatabaseUnitOfWork unitOfWork)
     {
         const string sql = "INSERT INTO users_password_reset_codes (user_id, code) VALUES (@UserId, @Code)";
         var parameters = new Dictionary<string, object>
@@ -45,17 +58,7 @@ public class ForgotPasswordCommandHandler(
             ["@UserId"] = userId,
             ["@Code"] = code
         };
-
-        try
-        {
-            await databaseService.ExecuteAsync(sql, parameters, cancellationToken);
-            logger.LogInformation("Forgot email code inserted successfully for user of id {UserId}.", userId);
-            return true;
-        }
-        catch (MySqlException ex)
-        {
-            logger.LogError(ex, "Error inserting password reset code. SQL State: {ExSqlState}, Error Code: {ExNumber}", ex.SqlState, ex.Number);
-            return false;
-        }
+        await unitOfWork.ExecuteAsync(sql, parameters, message.CancellationToken);
+        logger.LogInformation("Forgot email code inserted successfully for user of id {UserId}.", userId);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace DotNetAngularTemplate.Services;
+namespace DotNetAngularTemplate.Infrastructure.Services;
 
 public class EmailRateLimitService(ILogger<EmailRateLimitService> logger, IConnectionMultiplexer multiplexer)
 {

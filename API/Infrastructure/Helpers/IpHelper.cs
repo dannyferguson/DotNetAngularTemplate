@@ -1,4 +1,4 @@
-﻿namespace DotNetAngularTemplate.Helpers;
+﻿namespace DotNetAngularTemplate.Infrastructure.Helpers;
 
 public static class IpHelper
 {

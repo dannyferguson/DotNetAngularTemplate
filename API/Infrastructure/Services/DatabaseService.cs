@@ -1,9 +1,8 @@
 ﻿using System.Data;
-using DotNetAngularTemplate.Helpers;
-using DotNetAngularTemplate.Models;
+using DotNetAngularTemplate.Infrastructure.Models;
 using MySqlConnector;
 
-namespace DotNetAngularTemplate.Services;
+namespace DotNetAngularTemplate.Infrastructure.Services;
 
 public record User(int Id, string Email, string PasswordHash, DateTime CreatedAt, DateTime UpdatedAt);
 
@@ -18,11 +17,19 @@ public class DatabaseService
         _connectionString = connectionString;
     }
     
+    public async Task<DatabaseUnitOfWork> BeginUnitOfWorkAsync(CancellationToken cancellationToken = default)
+    {
+        var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        return new DatabaseUnitOfWork(connection, transaction);
+    }
+    
     public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            await using var conn = await GetOpenConnectionAsync();
+            await using var conn = await GetOpenConnectionAsync(cancellationToken);
             return true;
         }
         catch (Exception ex)
@@ -32,39 +39,17 @@ public class DatabaseService
         }
     }
 
-    private async Task<MySqlConnection> GetOpenConnectionAsync()
+    private async Task<MySqlConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default)
     {
         var conn = new MySqlConnection(_connectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(cancellationToken);
         return conn;
-    }
-
-    public async Task<int> ExecuteAsync(string sql, Dictionary<string, object> parameters,
-        CancellationToken cancellationToken = default)
-    {
-        await using var conn = await GetOpenConnectionAsync();
-        await using var cmd = new MySqlCommand(sql, conn);
-
-        AddParameters(cmd, parameters);
-
-        return await cmd.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    public async Task<T?> ExecuteScalarAsync<T>(string sql, Dictionary<string, object> parameters,
-        CancellationToken cancellationToken = default)
-    {
-        await using var conn = await GetOpenConnectionAsync();
-        await using var cmd = new MySqlCommand(sql, conn);
-
-        AddParameters(cmd, parameters);
-
-        return (T?)await cmd.ExecuteScalarAsync(cancellationToken);
     }
 
     public async Task<T?> QuerySingleAsync<T>(string sql, Dictionary<string, object> parameters,
         Func<IDataReader, T> map, CancellationToken cancellationToken = default)
     {
-        await using var conn = await GetOpenConnectionAsync();
+        await using var conn = await GetOpenConnectionAsync(cancellationToken);
         await using var cmd = new MySqlCommand(sql, conn);
 
         AddParameters(cmd, parameters);
@@ -78,7 +63,7 @@ public class DatabaseService
         Dictionary<string, object> parameters,
         Func<IDataReader, T> map, CancellationToken cancellationToken = default)
     {
-        await using var conn = await GetOpenConnectionAsync();
+        await using var conn = await GetOpenConnectionAsync(cancellationToken);
         await using var cmd = new MySqlCommand(sql, conn);
 
         AddParameters(cmd, parameters);
@@ -153,17 +138,19 @@ public class DatabaseService
 
     public async Task<ApiResult> UpdateUserPassword(int userId, string passwordHash, CancellationToken cancellationToken = default)
     {
-        const string sql = "UPDATE users SET password_hash = @Password, updated_at = @UtcNow WHERE id = @UserId";
-        var parameters = new Dictionary<string, object>
-        {
-            ["@Password"] = passwordHash,
-            ["@UtcNow"] = DateTime.UtcNow,
-            ["@UserId"] = userId,
-        };
+        await using var unitOfWork = await BeginUnitOfWorkAsync(cancellationToken);
 
         try
         {
-            await ExecuteAsync(sql, parameters, cancellationToken);
+            const string sql = "UPDATE users SET password_hash = @Password, updated_at = @UtcNow WHERE id = @UserId";
+            var parameters = new Dictionary<string, object>
+            {
+                ["@Password"] = passwordHash,
+                ["@UtcNow"] = DateTime.UtcNow,
+                ["@UserId"] = userId,
+            };
+            await unitOfWork.ExecuteAsync(sql, parameters, cancellationToken);
+            await unitOfWork.CommitAsync(cancellationToken);
             _logger.LogInformation("User by id '{Id}' has successfully updated their password.", userId);
             return ApiResult.Success();
         }
@@ -172,11 +159,13 @@ public class DatabaseService
             _logger.LogError(ex,
                 "Error updating password for user id {UserId}. SQL State: {ExSqlState}, Error Code: {ExNumber}", userId,
                 ex.SqlState, ex.Number);
+            await unitOfWork.RollbackAsync(cancellationToken);
             return ApiResult.Failure();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error updating password for user of id: {UserId}", userId);
+            await unitOfWork.RollbackAsync(cancellationToken);
             return ApiResult.Failure();
         }
     }

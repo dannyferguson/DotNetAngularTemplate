@@ -1,4 +1,4 @@
-﻿namespace DotNetAngularTemplate.Models;
+﻿namespace DotNetAngularTemplate.Infrastructure.Models;
 
 public class ApiResult
 {
