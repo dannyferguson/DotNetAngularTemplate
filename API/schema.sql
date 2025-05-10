@@ -21,7 +21,7 @@ CREATE TABLE users_login_history
 );
 CREATE INDEX idx_login_history_user_id ON users_login_history (user_id);
 
--- Password Reset Codes table
+-- Password reset codes table
 CREATE TABLE users_password_reset_codes
 (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,7 +33,7 @@ CREATE TABLE users_password_reset_codes
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
--- Email Confirmation Codes table
+-- Email confirmation codes table
 CREATE TABLE users_email_confirmation_codes
 (
     id INT AUTO_INCREMENT PRIMARY KEY,

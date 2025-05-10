@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {BehaviorSubject, Observable, tap} from 'rxjs';
+import {BehaviorSubject, map, Observable, of, switchMap, tap} from 'rxjs';
 import {handleAuthError} from './handle-auth-error.operator';
 import {ApiResult} from '../../shared/models/api-result.model';
 
@@ -15,8 +15,16 @@ export class AuthService {
 
   public login(email: string, password: string): Observable<ApiResult> {
     return this.http.post<ApiResult>('/api/v1/auth/login', {email: email, password: password}).pipe(
-      tap(result => {
-        this.isAuthenticatedSubject.next(result.isSuccess)
+      switchMap(result => {
+        if (!result.isSuccess) {
+          return of(result);
+
+        }
+
+        this.isAuthenticatedSubject.next(true);
+        return this.http.get('/api/v1/auth/me').pipe(
+          map(() => result)
+        );
       }),
       handleAuthError()
     );
