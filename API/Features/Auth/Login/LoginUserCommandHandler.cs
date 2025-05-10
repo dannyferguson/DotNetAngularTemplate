@@ -7,7 +7,7 @@ using MySqlConnector;
 
 namespace DotNetAngularTemplate.Features.Auth.Login;
 
-public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, DatabaseService databaseService, UserSessionVersionService userSessionVersionService)
+public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, DatabaseService databaseService, SessionVersionService sessionVersionService)
 {
     public async Task<ApiResult> Handle(LoginUserCommand message)
     {
@@ -38,14 +38,14 @@ public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, Da
         }
         await unitOfWork.CommitAsync(message.CancellationToken);
         
-        var version = await userSessionVersionService.GetVersionAsync(user.Id.ToString());
+        var version = await sessionVersionService.GetVersionAsync(user.Id.ToString());
         
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, message.Email),
             new(ClaimTypes.Role, "USER"),
-            userSessionVersionService.CreateVersionClaim(version)
+            sessionVersionService.CreateVersionClaim(version)
         };
         var identity = new ClaimsIdentity(claims, "AppCookie");
         var principal = new ClaimsPrincipal(identity);

@@ -36,16 +36,19 @@ public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, 
         {
             logger.LogInformation("Registration failed due to duplicate email: {Email}", message.Email);
             // We don't want to let users know a duplicate email was found for security reasons.
+            await unitOfWork.RollbackAsync(message.CancellationToken);
             return ApiResult.Success("Registration successful. Please check your email to verify your account."); 
         }
         catch (MySqlException ex)
         {
             logger.LogError(ex, "Error during user registration for email: {Email}. SQL State: {ExSqlState}, Error Code: {ExNumber}", message.Email, ex.SqlState, ex.Number);
+            await unitOfWork.RollbackAsync(message.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error during user registration for email: {Email}", message.Email);
+            await unitOfWork.RollbackAsync(message.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
     }

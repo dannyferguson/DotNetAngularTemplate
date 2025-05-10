@@ -27,14 +27,14 @@ public class ForgotPasswordCommandHandler(
             var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
         
             await InsertPasswordResetCodeAsync(message, user.Id, code, unitOfWork);
+            await unitOfWork.CommitAsync(message.CancellationToken);
         
             if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{message.Ip}") &&
                 await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{message.Email}"))
             {
                 await emailService.SendForgotPasswordEmail(message.Email, code);
             }
-
-            await unitOfWork.CommitAsync(message.CancellationToken);
+            
             return ApiResult.Success("If that email exists in our systems, a reset link was sent.");
         }
         catch (MySqlException ex)

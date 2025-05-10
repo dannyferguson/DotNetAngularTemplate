@@ -1,22 +1,28 @@
 ﻿using DotNetAngularTemplate.Infrastructure.Services;
-using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace DotNetAngularTemplate.Middleware;
 
 public class SessionVersionValidationMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, UserSessionVersionService sessionService)
+    public async Task InvokeAsync(HttpContext context, SessionVersionService sessionVersionService)
     {
-        if (context.User.Identity?.IsAuthenticated == true)
+        var user = context.User;
+        if (user.Identity?.IsAuthenticated == true)
         {
-            var valid = await sessionService.IsSessionValid(context);
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var versionClaim = user.FindFirst("SessionVersion")?.Value;
 
-            if (!valid)
+            if (userId != null && versionClaim != null)
             {
-                await context.SignOutAsync("AppCookie");
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Session invalidated.");
-                return;
+                var currentVersion = await sessionVersionService.GetVersionAsync(userId);
+
+                if (versionClaim != currentVersion)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Session invalidated.");
+                    return;
+                }
             }
         }
 

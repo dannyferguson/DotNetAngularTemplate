@@ -10,7 +10,7 @@ public class ForgotPasswordConfirmationCommandHandler(
     DatabaseService databaseService,
     EmailService emailService,
     EmailRateLimitService emailRateLimitService,
-    UserSessionVersionService userSessionVersionService)
+    SessionVersionService sessionVersionService)
 {
     public async Task<ApiResult> Handle(ForgotPasswordConfirmationCommand message)
     {
@@ -39,8 +39,15 @@ public class ForgotPasswordConfirmationCommandHandler(
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
-        await userSessionVersionService.BumpVersionAsync(userId.Value.ToString());
-
+        var bumpSessionVersionResult = await sessionVersionService.BumpVersionAsync(userId.Value.ToString(), unitOfWork, message.CancellationToken);
+        if (!bumpSessionVersionResult.IsSuccess)
+        {
+            await unitOfWork.RollbackAsync(message.CancellationToken);
+            return ApiResult.Failure("An unexpected error occurred. Please try again later.");
+        }
+        
+        await unitOfWork.CommitAsync(message.CancellationToken);
+        
         if (await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-ip-{message.Ip}") &&
             await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-user-id-{userId.Value}"))
         {
@@ -50,8 +57,7 @@ public class ForgotPasswordConfirmationCommandHandler(
                 await emailService.SendPasswordChangedEmail(user.Email);
             }
         }
-
-        await unitOfWork.CommitAsync(message.CancellationToken);
+        
         return ApiResult.Success("Password successfully reset! Redirecting you to login page.");
     }
     

@@ -22,7 +22,7 @@ public class DatabaseService
         var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        return new DatabaseUnitOfWork(connection, transaction);
+        return new DatabaseUnitOfWork(_logger, connection, transaction);
     }
     
     public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default)

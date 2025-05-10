@@ -2,10 +2,12 @@
 
 namespace DotNetAngularTemplate.Infrastructure.Services;
 
-public class DatabaseUnitOfWork(MySqlConnection connection, MySqlTransaction transaction) : IAsyncDisposable
+public class DatabaseUnitOfWork(ILogger<DatabaseService> logger, MySqlConnection connection, MySqlTransaction transaction) : IAsyncDisposable
 {
     private MySqlConnection Connection { get; } = connection;
     private MySqlTransaction Transaction { get; } = transaction;
+
+    private bool _committedOrRolledBack = false;
 
     public async Task<int> ExecuteAsync(string sql, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
     {
@@ -30,11 +32,33 @@ public class DatabaseUnitOfWork(MySqlConnection connection, MySqlTransaction tra
         return result is DBNull or null ? default : (T)Convert.ChangeType(result, typeof(T));
     }
 
-    public async Task CommitAsync(CancellationToken cancellationToken = default) => await Transaction.CommitAsync(cancellationToken);
-    public async Task RollbackAsync(CancellationToken cancellationToken = default) => await Transaction.RollbackAsync(cancellationToken);
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
+    {
+        await Transaction.CommitAsync(cancellationToken);
+        _committedOrRolledBack = true;
+    }
+
+    public async Task RollbackAsync(CancellationToken cancellationToken = default)
+    {
+        await Transaction.RollbackAsync(cancellationToken);
+        _committedOrRolledBack = true;
+    }
 
     public async ValueTask DisposeAsync()
     {
+        if (!_committedOrRolledBack)
+        {
+            logger.LogWarning("UnitOfWork disposed without commit/rollback — forcing rollback.");
+            try
+            {
+                await Transaction.RollbackAsync();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+
         await Transaction.DisposeAsync();
         await Connection.DisposeAsync();
     }

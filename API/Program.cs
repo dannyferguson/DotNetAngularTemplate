@@ -29,7 +29,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddMysqlDatabaseService(builder.Configuration);
 builder.Services.AddResendEmailing(builder.Configuration);
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
-builder.Services.AddSingleton<UserSessionVersionService>();
+builder.Services.AddSingleton<SessionVersionService>();
 
 var app = builder.Build();
 
