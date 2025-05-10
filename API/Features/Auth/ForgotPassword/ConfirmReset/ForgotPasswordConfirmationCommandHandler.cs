@@ -1,6 +1,7 @@
 ﻿using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Models;
 using DotNetAngularTemplate.Infrastructure.Services;
+using MySqlConnector;
 
 namespace DotNetAngularTemplate.Features.Auth.ForgotPassword.ConfirmReset;
 
@@ -21,10 +22,20 @@ public class ForgotPasswordConfirmationCommandHandler(
         }
         
         var passwordHash = PasswordHelper.HashPassword(message.Password);
+        
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
 
-        var result = await databaseService.UpdateUserPassword(userId.Value, passwordHash, message.CancellationToken);
-        if (!result.IsSuccess)
+        var updateUserPasswordResult = await databaseService.UpdateUserPassword(unitOfWork, userId.Value, passwordHash, message.CancellationToken);
+        if (!updateUserPasswordResult.IsSuccess)
         {
+            await unitOfWork.RollbackAsync(message.CancellationToken);
+            return ApiResult.Failure("An unexpected error occurred. Please try again later.");
+        }
+        
+        var markCodeAsUsedResult = await MarkCodeAsUsed(unitOfWork, message.Code, message.CancellationToken);
+        if (!markCodeAsUsedResult.IsSuccess)
+        {
+            await unitOfWork.RollbackAsync(message.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
@@ -39,13 +50,14 @@ public class ForgotPasswordConfirmationCommandHandler(
                 await emailService.SendPasswordChangedEmail(user.Email);
             }
         }
-        
+
+        await unitOfWork.CommitAsync(message.CancellationToken);
         return ApiResult.Success("Password successfully reset! Redirecting you to login page.");
     }
     
     private async Task<int?> GetUserIdByForgotPasswordCode(string code, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT user_id FROM users_password_reset_codes WHERE code = @Code AND expires_at > @UtcNow";
+        const string sql = "SELECT user_id FROM users_password_reset_codes WHERE code = @Code AND expires_at > @UtcNow AND used_at IS NULL";
         var parameters = new Dictionary<string, object>
         {
             ["@Code"] = code,
@@ -66,6 +78,40 @@ public class ForgotPasswordConfirmationCommandHandler(
         {
             logger.LogError(ex, "An error occured while trying to retrieve user id by forgot password code {Code}", code);
             return null;
+        }
+    }
+    
+    private async Task<ApiResult> MarkCodeAsUsed(DatabaseUnitOfWork unitOfWork, string code, CancellationToken cancellationToken)
+    {
+        try
+        {
+            const string sql = "UPDATE users_password_reset_codes SET used_at = @UtcNow WHERE code = @Code";
+            var parameters = new Dictionary<string, object>
+            {
+                ["@UtcNow"] = DateTime.UtcNow,
+                ["@Code"] = code
+            };
+            
+            var rowsAffected = await unitOfWork.ExecuteAsync(sql, parameters, cancellationToken);
+            if (rowsAffected == 0)
+            {
+                return ApiResult.Failure();
+            }
+            
+            logger.LogInformation("Password reset code '{Code}' has successfully been used.", code);
+            return ApiResult.Success();
+        }
+        catch (MySqlException ex)
+        {
+            logger.LogError(ex,
+                "Error marking password reset code {Code} as used. SQL State: {ExSqlState}, Error Code: {ExNumber}", code,
+                ex.SqlState, ex.Number);
+            return ApiResult.Failure();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error marking password reset code {Code} as used.", code);
+            return ApiResult.Failure();
         }
     }
 }

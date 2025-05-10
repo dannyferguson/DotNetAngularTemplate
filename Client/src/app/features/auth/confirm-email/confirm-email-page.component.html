@@ -1,0 +1,9 @@
+<div class="flex flex-col justify-center px-6 py-12 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+    @if (submitting()) {
+      <p class="text-md text-center">Confirming your email. Please wait..</p>
+    }
+
+    <app-alert-banner [error]="errorMessage()" [success]="successMessage()"></app-alert-banner>
+  </div>
+</div>

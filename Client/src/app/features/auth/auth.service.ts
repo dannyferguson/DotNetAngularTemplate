@@ -57,4 +57,10 @@ export class AuthService {
       handleAuthError()
     );
   }
+
+  public confirmEmail(code: string): Observable<ApiResult> {
+    return this.http.post<ApiResult>('/api/v1/auth/confirm-email', {code: code}).pipe(
+      handleAuthError()
+    )
+  }
 }

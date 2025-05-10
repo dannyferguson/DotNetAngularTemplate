@@ -138,10 +138,8 @@ public class DatabaseService
         }
     }
 
-    public async Task<ApiResult> UpdateUserPassword(int userId, string passwordHash, CancellationToken cancellationToken = default)
+    public async Task<ApiResult> UpdateUserPassword(DatabaseUnitOfWork unitOfWork, int userId, string passwordHash, CancellationToken cancellationToken = default)
     {
-        await using var unitOfWork = await BeginUnitOfWorkAsync(cancellationToken);
-
         try
         {
             const string sql = "UPDATE users SET password_hash = @Password, updated_at = @UtcNow WHERE id = @UserId";
@@ -152,7 +150,6 @@ public class DatabaseService
                 ["@UserId"] = userId,
             };
             await unitOfWork.ExecuteAsync(sql, parameters, cancellationToken);
-            await unitOfWork.CommitAsync(cancellationToken);
             _logger.LogInformation("User by id '{Id}' has successfully updated their password.", userId);
             return ApiResult.Success();
         }
@@ -161,13 +158,11 @@ public class DatabaseService
             _logger.LogError(ex,
                 "Error updating password for user id {UserId}. SQL State: {ExSqlState}, Error Code: {ExNumber}", userId,
                 ex.SqlState, ex.Number);
-            await unitOfWork.RollbackAsync(cancellationToken);
             return ApiResult.Failure();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error updating password for user of id: {UserId}", userId);
-            await unitOfWork.RollbackAsync(cancellationToken);
             return ApiResult.Failure();
         }
     }

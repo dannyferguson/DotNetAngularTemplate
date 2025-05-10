@@ -7,6 +7,7 @@ import {ForgotPasswordPageComponent} from './features/auth/forgot-password/forgo
 import {
   ForgotPasswordConfirmationPage
 } from './features/auth/forgot-password/forgot-password-confirmation-page.component';
+import {ConfirmEmailPageComponent} from './features/auth/confirm-email/confirm-email-page.component';
 
 export const routes: Routes = [
   {
@@ -32,5 +33,9 @@ export const routes: Routes = [
   {
     path: 'forgot-password-confirmation',
     component: ForgotPasswordConfirmationPage
+  },
+  {
+    path: 'confirm-email',
+    component: ConfirmEmailPageComponent
   }
 ];

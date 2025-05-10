@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using DotNetAngularTemplate.Features.Auth.ConfirmEmail;
 using DotNetAngularTemplate.Features.Auth.ForgotPassword.ConfirmReset;
 using DotNetAngularTemplate.Features.Auth.ForgotPassword.RequestReset;
 using DotNetAngularTemplate.Features.Auth.Login;
@@ -93,6 +94,19 @@ public class AuthController(
             logger);
 
         return result.IsSuccess ? Ok(result) : Unauthorized(result);
+    }
+    
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail(
+        [FromBody] EmailConfirmationRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
+            () => bus.InvokeAsync<ApiResult>(
+                new EmailConfirmationCommand(requestDto.Code, cancellationToken), cancellationToken),
+            MinimumResponseTimeInMs,
+            logger);
+
+        return result.IsSuccess ? Ok(result) : StatusCode(StatusCodes.Status500InternalServerError, result);
     }
 
     [Authorize]

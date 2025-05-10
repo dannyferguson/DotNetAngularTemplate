@@ -53,7 +53,7 @@ public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, 
     private async Task InsertConfirmationCode(CreateUserCommand message, int userId, string code,
         DatabaseUnitOfWork unitOfWork)
     {
-        const string insertConfirmationCodeSql = "INSERT INTO users_email_confirmation_codes (user_id, code) VALUES (@UserId, @Code)";
+        const string insertConfirmationCodeSql = "INSERT INTO users_email_confirmation_codes (user_id, code, expires_at) VALUES (@UserId, @Code, UTC_TIMESTAMP() + INTERVAL 24 HOUR)";
         var insertConfirmationCodeParams = new Dictionary<string, object>
         {
             ["@UserId"] = userId,

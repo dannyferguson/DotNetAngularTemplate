@@ -52,7 +52,7 @@ public class ForgotPasswordCommandHandler(
     private async Task InsertPasswordResetCodeAsync(ForgotPasswordCommand message, int userId, string code,
         DatabaseUnitOfWork unitOfWork)
     {
-        const string sql = "INSERT INTO users_password_reset_codes (user_id, code) VALUES (@UserId, @Code)";
+        const string sql = "INSERT INTO users_password_reset_codes (user_id, code, expires_at) VALUES (@UserId, @Code, UTC_TIMESTAMP() + INTERVAL 1 HOUR)";
         var parameters = new Dictionary<string, object>
         {
             ["@UserId"] = userId,
