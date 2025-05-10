@@ -4,7 +4,7 @@ using MySqlConnector;
 
 namespace DotNetAngularTemplate.Infrastructure.Services;
 
-public record User(int Id, string Email, string PasswordHash, DateTime CreatedAt, DateTime UpdatedAt);
+public record User(int Id, string Email, bool EmailVerified, string PasswordHash, DateTime CreatedAt, DateTime UpdatedAt);
 
 public class DatabaseService
 {
@@ -81,7 +81,7 @@ public class DatabaseService
 
     public async Task<User?> GetUserByEmail(string email, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT id, password_hash, created_at, updated_at FROM users WHERE email = @Email";
+        const string sql = "SELECT id, email_verified, password_hash, created_at, updated_at FROM users WHERE email = @Email";
         var parameters = new Dictionary<string, object>
         {
             ["@Email"] = email
@@ -92,10 +92,11 @@ public class DatabaseService
             var user = await QuerySingleAsync<User>(sql, parameters, reader =>
             {
                 var id = reader.GetInt32(0);
-                var hash = reader.GetString(1);
-                var createdAt = reader.GetDateTime(2);
-                var updatedAt = reader.GetDateTime(3);
-                return new User(id, email, hash, createdAt, updatedAt);
+                var emailVerified = reader.GetBoolean(1);
+                var hash = reader.GetString(2);
+                var createdAt = reader.GetDateTime(3);
+                var updatedAt = reader.GetDateTime(4);
+                return new User(id, email, emailVerified, hash, createdAt, updatedAt);
             }, cancellationToken);
 
             return user;
@@ -110,7 +111,7 @@ public class DatabaseService
 
     public async Task<User?> GetUserById(int id, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT email, password_hash, created_at, updated_at FROM users WHERE id = @Id";
+        const string sql = "SELECT email, email_verified, password_hash, created_at, updated_at FROM users WHERE id = @Id";
         var parameters = new Dictionary<string, object>
         {
             ["@Id"] = id
@@ -121,10 +122,11 @@ public class DatabaseService
             var user = await QuerySingleAsync<User>(sql, parameters, reader =>
             {
                 var email = reader.GetString(0);
-                var hash = reader.GetString(1);
-                var createdAt = reader.GetDateTime(2);
-                var updatedAt = reader.GetDateTime(3);
-                return new User(id, email, hash, createdAt, updatedAt);
+                var emailVerified = reader.GetBoolean(1);
+                var hash = reader.GetString(2);
+                var createdAt = reader.GetDateTime(3);
+                var updatedAt = reader.GetDateTime(4);
+                return new User(id, email, emailVerified, hash, createdAt, updatedAt);
             }, cancellationToken);
 
             return user;

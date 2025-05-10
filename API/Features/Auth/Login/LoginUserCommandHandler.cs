@@ -21,6 +21,11 @@ public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, Da
         {
             return ApiResult.Failure("Invalid credentials. Please try again.");
         }
+
+        if (!user.EmailVerified)
+        {
+            return ApiResult.Failure("Email not verified. Please confirm your email before logging in.");
+        }
         
         var version = await userSessionVersionService.GetVersionAsync(user.Id.ToString());
         
