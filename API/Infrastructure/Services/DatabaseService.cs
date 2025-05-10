@@ -111,10 +111,10 @@ public class DatabaseService
 
     public async Task<User?> GetUserById(int id, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT email, email_verified, password_hash, created_at, updated_at FROM users WHERE id = @Id";
+        const string sql = "SELECT email, email_verified, password_hash, created_at, updated_at FROM users WHERE id = @UserId";
         var parameters = new Dictionary<string, object>
         {
-            ["@Id"] = id
+            ["@UserId"] = id
         };
 
         try

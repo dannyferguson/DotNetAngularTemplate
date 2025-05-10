@@ -33,10 +33,10 @@ public class SessionVersionService(
 
     private async Task<string> GetVersionFromDbAsync(string userId, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT session_version FROM users WHERE id = @Id";
+        const string sql = "SELECT session_version FROM users WHERE id = @UserId";
         var parameters = new Dictionary<string, object>
         {
-            ["@Id"] = userId
+            ["@UserId"] = userId
         };
 
         var version = await databaseService.QuerySingleAsync<int?>(
