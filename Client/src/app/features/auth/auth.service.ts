@@ -18,7 +18,6 @@ export class AuthService {
       switchMap(result => {
         if (!result.isSuccess) {
           return of(result);
-
         }
 
         this.isAuthenticatedSubject.next(true);

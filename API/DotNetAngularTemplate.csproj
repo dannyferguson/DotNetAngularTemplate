@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Profile\UpdatePassword\" />
     <Folder Include="Infrastructure\" />
   </ItemGroup>
 
