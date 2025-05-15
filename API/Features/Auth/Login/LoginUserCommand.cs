@@ -1,3 +1,6 @@
-﻿namespace DotNetAngularTemplate.Features.Auth.Login;
+﻿using DotNetAngularTemplate.Infrastructure.CQRS;
+using DotNetAngularTemplate.Infrastructure.Models;
 
-public record LoginUserCommand(HttpContext Context, string Email, string Password, CancellationToken CancellationToken);
+namespace DotNetAngularTemplate.Features.Auth.Login;
+
+public record LoginUserCommand(HttpContext Context, string Email, string Password, CancellationToken CancellationToken) : IRequest<ApiResult>;

@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using DotNetAngularTemplate.Infrastructure.CQRS;
 using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Models;
 using DotNetAngularTemplate.Infrastructure.Services;
@@ -7,17 +8,17 @@ using MySqlConnector;
 
 namespace DotNetAngularTemplate.Features.Auth.Login;
 
-public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, DatabaseService databaseService, SessionVersionService sessionVersionService)
+public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, DatabaseService databaseService, SessionVersionService sessionVersionService) : IRequestHandler<LoginUserCommand, ApiResult>
 {
-    public async Task<ApiResult> Handle(LoginUserCommand message)
+    public async Task<ApiResult> Handle(LoginUserCommand command, CancellationToken cancellationToken)
     {
-        var user = await databaseService.GetUserByEmail(message.Email, message.CancellationToken);
+        var user = await databaseService.GetUserByEmail(command.Email, command.CancellationToken);
         if (user == null)
         {
             return ApiResult.Failure("Invalid credentials. Please try again.");
         }
         
-        var passwordValid = PasswordHelper.VerifyPassword(message.Password, user.PasswordHash);
+        var passwordValid = PasswordHelper.VerifyPassword(command.Password, user.PasswordHash);
         if (!passwordValid)
         {
             return ApiResult.Failure("Invalid credentials. Please try again.");
@@ -28,31 +29,31 @@ public class LoginUserCommandHandler(ILogger<LoginUserCommandHandler> logger, Da
             return ApiResult.Failure("Email not verified. Please confirm your email before logging in.");
         }
         
-        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
-        var ip = IpHelper.GetClientIp(message.Context);
-        var saveLoginHistoryResult = await SaveLoginHistory(unitOfWork, user.Id, ip, message.CancellationToken);
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(command.CancellationToken);
+        var ip = IpHelper.GetClientIp(command.Context);
+        var saveLoginHistoryResult = await SaveLoginHistory(unitOfWork, user.Id, ip, command.CancellationToken);
         if (!saveLoginHistoryResult.IsSuccess)
         {
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
-        await unitOfWork.CommitAsync(message.CancellationToken);
+        await unitOfWork.CommitAsync(command.CancellationToken);
         
         var version = await sessionVersionService.GetVersionAsync(user.Id.ToString());
         
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, message.Email),
+            new(ClaimTypes.Email, command.Email),
             new(ClaimTypes.Role, "USER"),
             sessionVersionService.CreateVersionClaim(version)
         };
         var identity = new ClaimsIdentity(claims, "AppCookie");
         var principal = new ClaimsPrincipal(identity);
         
-        await message.Context.SignInAsync("AppCookie", principal);
+        await command.Context.SignInAsync("AppCookie", principal);
         
-        logger.LogInformation("User {Email} has logged in!", message.Email);
+        logger.LogInformation("User {Email} has logged in!", command.Email);
         
         return ApiResult.Success("Login successful! Redirecting..");
     }

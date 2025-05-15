@@ -4,6 +4,7 @@ using DotNetAngularTemplate.Features.Auth.ForgotPassword.ConfirmReset;
 using DotNetAngularTemplate.Features.Auth.ForgotPassword.RequestReset;
 using DotNetAngularTemplate.Features.Auth.Login;
 using DotNetAngularTemplate.Features.Auth.Register;
+using DotNetAngularTemplate.Infrastructure.CQRS;
 using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Models;
 using Microsoft.AspNetCore.Antiforgery;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Wolverine;
 
 namespace DotNetAngularTemplate.Features.Auth;
 
@@ -20,7 +20,7 @@ namespace DotNetAngularTemplate.Features.Auth;
 [EnableRateLimiting("AuthPolicy")]
 public class AuthController(
     ILogger<AuthController> logger,
-    IMessageBus bus) : ControllerBase
+    Mediator mediator) : ControllerBase
 {
     // Ensure that endpoints whose response time varies depending on if an account exists or not respond within a constant amount of time in order to reduce the risk of timing based attacks.
     private const int MinimumResponseTimeInMs = 1500;
@@ -32,7 +32,7 @@ public class AuthController(
         var ip = IpHelper.GetClientIp(HttpContext);
         
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new CreateUserCommand(ip, requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
+            () => mediator.Send(new CreateUserCommand(ip, requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);
 
@@ -44,7 +44,7 @@ public class AuthController(
         [FromServices] IAntiforgery antiforgery, CancellationToken cancellationToken)
     {
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new LoginUserCommand(HttpContext, requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
+            () => mediator.Send(new LoginUserCommand(HttpContext, requestDto.Email, requestDto.Password, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);
 
@@ -74,7 +74,7 @@ public class AuthController(
         var ip = IpHelper.GetClientIp(HttpContext);
 
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(new ForgotPasswordCommand(ip, requestDto.Email, cancellationToken), cancellationToken),
+            () => mediator.Send(new ForgotPasswordCommand(ip, requestDto.Email, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);
 
@@ -88,7 +88,7 @@ public class AuthController(
         var ip = IpHelper.GetClientIp(HttpContext);
 
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(
+            () => mediator.Send(
                 new ForgotPasswordConfirmationCommand(ip, requestDto.Code, requestDto.Password, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);
@@ -101,7 +101,7 @@ public class AuthController(
         [FromBody] EmailConfirmationRequestDto requestDto, CancellationToken cancellationToken)
     {
         var result = await TimingProtectorHelper.RunWithMinimumDelayAsync(
-            () => bus.InvokeAsync<ApiResult>(
+            () => mediator.Send(
                 new EmailConfirmationCommand(requestDto.Code, cancellationToken), cancellationToken),
             MinimumResponseTimeInMs,
             logger);

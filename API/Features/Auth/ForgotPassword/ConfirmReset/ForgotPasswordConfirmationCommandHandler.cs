@@ -1,4 +1,5 @@
-﻿using DotNetAngularTemplate.Infrastructure.Helpers;
+﻿using DotNetAngularTemplate.Infrastructure.CQRS;
+using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Models;
 using DotNetAngularTemplate.Infrastructure.Services;
 using MySqlConnector;
@@ -10,48 +11,48 @@ public class ForgotPasswordConfirmationCommandHandler(
     DatabaseService databaseService,
     EmailService emailService,
     EmailRateLimitService emailRateLimitService,
-    SessionVersionService sessionVersionService)
+    SessionVersionService sessionVersionService) : IRequestHandler<ForgotPasswordConfirmationCommand, ApiResult>
 {
-    public async Task<ApiResult> Handle(ForgotPasswordConfirmationCommand message)
+    public async Task<ApiResult> Handle(ForgotPasswordConfirmationCommand command, CancellationToken cancellationToken)
     {
-        var userId = await GetUserIdByForgotPasswordCode(message.Code, message.CancellationToken);
+        var userId = await GetUserIdByForgotPasswordCode(command.Code, command.CancellationToken);
         if (userId == null)
         {
-            logger.LogWarning("User attempted to reset password with invalid or expired code {Code}", message.Code);
+            logger.LogWarning("User attempted to reset password with invalid or expired code {Code}", command.Code);
             return ApiResult.Failure("This code is invalid or has expired.");
         }
         
-        var passwordHash = PasswordHelper.HashPassword(message.Password);
+        var passwordHash = PasswordHelper.HashPassword(command.Password);
         
-        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(command.CancellationToken);
 
-        var updateUserPasswordResult = await databaseService.UpdateUserPassword(unitOfWork, userId.Value, passwordHash, message.CancellationToken);
+        var updateUserPasswordResult = await databaseService.UpdateUserPassword(unitOfWork, userId.Value, passwordHash, command.CancellationToken);
         if (!updateUserPasswordResult.IsSuccess)
         {
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
-        var markCodeAsUsedResult = await MarkCodeAsUsed(unitOfWork, message.Code, message.CancellationToken);
+        var markCodeAsUsedResult = await MarkCodeAsUsed(unitOfWork, command.Code, command.CancellationToken);
         if (!markCodeAsUsedResult.IsSuccess)
         {
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
-        var bumpSessionVersionResult = await sessionVersionService.BumpVersionAsync(userId.Value.ToString(), unitOfWork, message.CancellationToken);
+        var bumpSessionVersionResult = await sessionVersionService.BumpVersionAsync(userId.Value.ToString(), unitOfWork, command.CancellationToken);
         if (!bumpSessionVersionResult.IsSuccess)
         {
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
-        await unitOfWork.CommitAsync(message.CancellationToken);
+        await unitOfWork.CommitAsync(command.CancellationToken);
         
-        if (await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-ip-{message.Ip}") &&
+        if (await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-ip-{command.Ip}") &&
             await emailRateLimitService.CanSendAsync($"forgot-password-confirmation-email-by-user-id-{userId.Value}"))
         {
-            var user = await databaseService.GetUserById(userId.Value, message.CancellationToken);
+            var user = await databaseService.GetUserById(userId.Value, command.CancellationToken);
             if (user != null)
             {
                 await emailService.SendPasswordChangedEmail(user.Email);

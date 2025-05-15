@@ -1,4 +1,5 @@
 ﻿using System.Threading.RateLimiting;
+using DotNetAngularTemplate.Infrastructure.CQRS;
 using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Services;
 using Resend;
@@ -180,6 +181,27 @@ public static class ServiceCollectionExtensions
         
         // Add custom email rate limiting service to prevent over-spend
         services.AddSingleton<EmailRateLimitService>();
+
+        return services;
+    }
+    
+    public static IServiceCollection AddAppCqrs(this IServiceCollection services)
+    {
+        services.AddScoped<Mediator>();
+
+        var assembly = typeof(Mediator).Assembly;
+
+        var handlerTypes = assembly
+            .GetTypes()
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .SelectMany(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
+                .Select(i => new { Interface = i, Implementation = t }));
+
+        foreach (var handler in handlerTypes)
+        {
+            services.AddScoped(handler.Interface, handler.Implementation);
+        }
 
         return services;
     }

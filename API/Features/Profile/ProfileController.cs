@@ -1,21 +1,12 @@
-﻿using System.Security.Claims;
-using DotNetAngularTemplate.Extensions;
+﻿using DotNetAngularTemplate.Extensions;
 using DotNetAngularTemplate.Features.Auth;
-using DotNetAngularTemplate.Features.Auth.ConfirmEmail;
-using DotNetAngularTemplate.Features.Auth.ForgotPassword.ConfirmReset;
-using DotNetAngularTemplate.Features.Auth.ForgotPassword.RequestReset;
-using DotNetAngularTemplate.Features.Auth.Login;
-using DotNetAngularTemplate.Features.Auth.Register;
 using DotNetAngularTemplate.Features.Profile.UpdateEmail;
+using DotNetAngularTemplate.Infrastructure.CQRS;
 using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Models;
-using JasperFx.Core;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Wolverine;
 
 namespace DotNetAngularTemplate.Features.Profile;
 
@@ -26,7 +17,7 @@ namespace DotNetAngularTemplate.Features.Profile;
 [Authorize]
 public class ProfileController(
     ILogger<AuthController> logger,
-    IMessageBus bus) : ControllerBase
+    Mediator mediator) : ControllerBase
 {
     [HttpPost("update-email")]
     public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto requestDto,

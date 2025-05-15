@@ -16,7 +16,7 @@ public class CspNonceMiddleware(RequestDelegate next)
             $"default-src 'self'; " +
             $"style-src 'self' 'nonce-{nonce}'; " +
             $"script-src 'self' 'nonce-{nonce}'; " +
-            $"object-src 'none'; img-src 'self' https://tailwindcss.com https://images.unsplash.com;";
+            $"object-src 'none'; img-src 'self';";
 
         await next(context);
     }
