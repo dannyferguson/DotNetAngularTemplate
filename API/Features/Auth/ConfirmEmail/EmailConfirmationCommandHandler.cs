@@ -1,4 +1,5 @@
-﻿using DotNetAngularTemplate.Infrastructure.Models;
+﻿using DotNetAngularTemplate.Infrastructure.CQRS;
+using DotNetAngularTemplate.Infrastructure.Models;
 using DotNetAngularTemplate.Infrastructure.Services;
 using MySqlConnector;
 
@@ -6,34 +7,34 @@ namespace DotNetAngularTemplate.Features.Auth.ConfirmEmail;
 
 public class EmailConfirmationCommandHandler(
     ILogger<EmailConfirmationCommandHandler> logger,
-    DatabaseService databaseService)
+    DatabaseService databaseService) : IRequestHandler<EmailConfirmationCommand, ApiResult>
 {
-    public async Task<ApiResult> Handle(EmailConfirmationCommand message)
+    public async Task<ApiResult> Handle(EmailConfirmationCommand command, CancellationToken cancellationToken)
     {
-        var userId = await GetUserIdByConfirmEmailCode(message.Code, message.CancellationToken);
+        var userId = await GetUserIdByConfirmEmailCode(command.Code, command.CancellationToken);
         if (userId == null)
         {
-            logger.LogWarning("User attempted to confirm email with invalid or expired code {Code}", message.Code);
+            logger.LogWarning("User attempted to confirm email with invalid or expired code {Code}", command.Code);
             return ApiResult.Failure("This link is invalid or has expired.");
         }
         
-        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(command.CancellationToken);
         
-        var verifyUserEmailResult = await VerifyUserEmail(unitOfWork, userId.Value, message.CancellationToken);
+        var verifyUserEmailResult = await VerifyUserEmail(unitOfWork, userId.Value, command.CancellationToken);
         if (!verifyUserEmailResult.IsSuccess)
         {
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
-        var markCodeAsUsedResult = await MarkCodeAsUsed(unitOfWork, message.Code, message.CancellationToken);
+        var markCodeAsUsedResult = await MarkCodeAsUsed(unitOfWork, command.Code, command.CancellationToken);
         if (!markCodeAsUsedResult.IsSuccess)
         {
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         
-        await unitOfWork.CommitAsync(message.CancellationToken);
+        await unitOfWork.CommitAsync(command.CancellationToken);
         return ApiResult.Success("Email confirmed! Redirecting you to login page.");
     }
     

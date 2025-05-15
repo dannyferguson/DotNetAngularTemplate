@@ -50,6 +50,3 @@ coverage/
 
 # Angular files
 wwwroot/
-
-# Wolverine codegen artifacts
-Internal/Generated/

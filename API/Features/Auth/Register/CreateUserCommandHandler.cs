@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using DotNetAngularTemplate.Infrastructure.CQRS;
 using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Models;
 using DotNetAngularTemplate.Infrastructure.Services;
@@ -6,49 +7,49 @@ using MySqlConnector;
 
 namespace DotNetAngularTemplate.Features.Auth.Register;
 
-public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, DatabaseService databaseService, EmailService emailService, EmailRateLimitService emailRateLimitService)
+public class CreateUserCommandHandler(ILogger<CreateUserCommandHandler> logger, DatabaseService databaseService, EmailService emailService, EmailRateLimitService emailRateLimitService) : IRequestHandler<CreateUserCommand, ApiResult>
 {
-    public async Task<ApiResult> Handle(CreateUserCommand message)
+    public async Task<ApiResult> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
-        var passwordHash = PasswordHelper.HashPassword(message.Password);
+        var passwordHash = PasswordHelper.HashPassword(command.Password);
         
-        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(command.CancellationToken);
 
         try
         {
-            var userId = await InsertUser(message, passwordHash, unitOfWork);
+            var userId = await InsertUser(command, passwordHash, unitOfWork);
 
             var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
             
-            await InsertConfirmationCode(message, userId, code, unitOfWork);
+            await InsertConfirmationCode(command, userId, code, unitOfWork);
 
-            var emailSent = await SendEmail(message.Ip, message.Email, code);
+            var emailSent = await SendEmail(command.Ip, command.Email, code);
             if (!emailSent)
             {
-                await unitOfWork.RollbackAsync(message.CancellationToken);
+                await unitOfWork.RollbackAsync(command.CancellationToken);
                 return ApiResult.Failure("An unexpected error occurred. Please try again later.");
             }
             
-            await unitOfWork.CommitAsync(message.CancellationToken);
+            await unitOfWork.CommitAsync(command.CancellationToken);
             return ApiResult.Success("Registration successful. Please check your email to verify your account.");
         }
         catch (MySqlException ex) when (ex.Number == 1062) 
         {
-            logger.LogInformation("Registration failed due to duplicate email: {Email}", message.Email);
+            logger.LogInformation("Registration failed due to duplicate email: {Email}", command.Email);
             // We don't want to let users know a duplicate email was found for security reasons.
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Success("Registration successful. Please check your email to verify your account."); 
         }
         catch (MySqlException ex)
         {
-            logger.LogError(ex, "Error during user registration for email: {Email}. SQL State: {ExSqlState}, Error Code: {ExNumber}", message.Email, ex.SqlState, ex.Number);
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            logger.LogError(ex, "Error during user registration for email: {Email}. SQL State: {ExSqlState}, Error Code: {ExNumber}", command.Email, ex.SqlState, ex.Number);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during user registration for email: {Email}", message.Email);
-            await unitOfWork.RollbackAsync(message.CancellationToken);
+            logger.LogError(ex, "Unexpected error during user registration for email: {Email}", command.Email);
+            await unitOfWork.RollbackAsync(command.CancellationToken);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
     }

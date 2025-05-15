@@ -1,3 +1,6 @@
-﻿namespace DotNetAngularTemplate.Features.Auth.ConfirmEmail;
+﻿using DotNetAngularTemplate.Infrastructure.CQRS;
+using DotNetAngularTemplate.Infrastructure.Models;
 
-public record EmailConfirmationCommand(string Code, CancellationToken CancellationToken);
+namespace DotNetAngularTemplate.Features.Auth.ConfirmEmail;
+
+public record EmailConfirmationCommand(string Code, CancellationToken CancellationToken) : IRequest<ApiResult>;

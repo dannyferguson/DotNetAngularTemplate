@@ -2,21 +2,12 @@ using DotNetAngularTemplate.Extensions;
 using DotNetAngularTemplate.Filters;
 using DotNetAngularTemplate.Infrastructure.Helpers;
 using DotNetAngularTemplate.Infrastructure.Services;
-using JasperFx.CodeGeneration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
-using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseWolverine(opts =>
-{
-    // Disable the non-mediator functionality in Wolverine as we do not currently need it
-    opts.Durability.Mode = DurabilityMode.MediatorOnly;
-    
-    opts.CodeGeneration.TypeLoadMode = TypeLoadMode.Auto;
-});
-
+builder.Services.AddAppCqrs();
 builder.Services.AddAuthenticationAndAuthorization();
 builder.Services.AddControllersWithViews(options =>
 {

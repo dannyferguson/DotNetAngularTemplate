@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using DotNetAngularTemplate.Infrastructure.CQRS;
 using DotNetAngularTemplate.Infrastructure.Models;
 using DotNetAngularTemplate.Infrastructure.Services;
 using MySqlConnector;
@@ -9,15 +10,15 @@ public class ForgotPasswordCommandHandler(
     ILogger<ForgotPasswordCommandHandler> logger,
     DatabaseService databaseService,
     EmailService emailService,
-    EmailRateLimitService emailRateLimitService)
+    EmailRateLimitService emailRateLimitService) : IRequestHandler<ForgotPasswordCommand, ApiResult>
 {
-    public async Task<ApiResult> Handle(ForgotPasswordCommand message)
+    public async Task<ApiResult> Handle(ForgotPasswordCommand command, CancellationToken cancellationToken)
     {
-        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(message.CancellationToken);
+        await using var unitOfWork = await databaseService.BeginUnitOfWorkAsync(command.CancellationToken);
         
         try
         {
-            var user = await databaseService.GetUserByEmail(message.Email, message.CancellationToken);
+            var user = await databaseService.GetUserByEmail(command.Email, command.CancellationToken);
             if (user == null)
             {
                 // We don't want to let users know if an email was found for security reasons.
@@ -26,13 +27,13 @@ public class ForgotPasswordCommandHandler(
 
             var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); // 32 bytes = 64 hex chars
         
-            await InsertPasswordResetCodeAsync(message, user.Id, code, unitOfWork);
-            await unitOfWork.CommitAsync(message.CancellationToken);
+            await InsertPasswordResetCodeAsync(command, user.Id, code, unitOfWork);
+            await unitOfWork.CommitAsync(command.CancellationToken);
         
-            if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{message.Ip}") &&
-                await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{message.Email}"))
+            if (await emailRateLimitService.CanSendAsync($"forgot-password-email-by-ip-{command.Ip}") &&
+                await emailRateLimitService.CanSendAsync($"forgot-password-email-by-email-{command.Email}"))
             {
-                await emailService.SendForgotPasswordEmail(message.Email, code);
+                await emailService.SendForgotPasswordEmail(command.Email, code);
             }
             
             return ApiResult.Success("If that email exists in our systems, a reset link was sent.");
@@ -44,7 +45,7 @@ public class ForgotPasswordCommandHandler(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during forgot password for email: {Email}", message.Email);
+            logger.LogError(ex, "Unexpected error during forgot password for email: {Email}", command.Email);
             return ApiResult.Failure("An unexpected error occurred. Please try again later.");
         }
     }
