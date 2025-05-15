@@ -2,7 +2,7 @@
   <mat-toolbar-row class="navbar">
     <div class="left">
       <!--  Mobile Menu-->
-      <button (click)="onToggleMobileMenu()" mat-icon-button class="example-icon"
+      <button (click)="onToggleMobileMenu()" mat-icon-button
               aria-label="Example icon-button with menu icon">
         <mat-icon>menu</mat-icon>
       </button>
@@ -21,9 +21,8 @@
   @if (mobileMenuOpen) {
     <mat-toolbar-row class="navbar mobile">
       <span>Third Line</span>
-      <span class="example-spacer"></span>
-      <mat-icon class="example-icon" aria-hidden="false" aria-label="Example heart icon">favorite</mat-icon>
-      <mat-icon class="example-icon" aria-hidden="false" aria-label="Example delete icon">delete</mat-icon>
+      <mat-icon aria-hidden="false" aria-label="Example heart icon">favorite</mat-icon>
+      <mat-icon aria-hidden="false" aria-label="Example delete icon">delete</mat-icon>
     </mat-toolbar-row>
   }
 </mat-toolbar>
