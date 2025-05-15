@@ -9,8 +9,8 @@
       <a routerLink="/">DotNetAngularTemplate</a>
     </div>
     <div class="right">
-      @if (isAuthenticated$ | async; as authenticated) {
-
+      @if (isAuthenticated$ | async) {
+        <a mat-button routerLink="/logout">Logout</a>
       } @else {
         <a mat-button routerLink="/register">Register</a>
         <a mat-flat-button routerLink="/login">Login</a>

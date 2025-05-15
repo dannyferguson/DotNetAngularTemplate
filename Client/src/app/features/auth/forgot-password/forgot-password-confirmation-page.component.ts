@@ -6,6 +6,7 @@ import {SubmitButtonComponent} from '../../../shared/components/buttons/submit-b
 import {TextInputComponent} from '../../../shared/components/form-elements/text-input/text-input.component';
 import {passwordsMatchValidator} from '../passwords-match.validator';
 import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.service';
+import {FormContainerComponent} from '../../../shared/components/form-elements/form-container/form-container.component';
 
 @Component({
   selector: 'app-forgot-password-confirmation-page',
@@ -13,7 +14,8 @@ import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.ser
     RouterLink,
     ReactiveFormsModule,
     SubmitButtonComponent,
-    TextInputComponent
+    TextInputComponent,
+    FormContainerComponent
   ],
   templateUrl: './forgot-password-confirmation-page.component.html'
 })

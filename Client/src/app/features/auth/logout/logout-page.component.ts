@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, inject, signal} from '@angular/core';
+import {AfterViewInit, Component, inject, OnInit, signal} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {AuthService} from '../auth.service';
 import {Router} from '@angular/router';
@@ -12,20 +12,18 @@ import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.ser
   ],
   templateUrl: './logout-page.component.html'
 })
-export class LogoutPageComponent implements AfterViewInit {
+export class LogoutPageComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private alertBannerService = inject(SnackBarService);
 
-  protected submitting = signal(true);
+  ngOnInit(): void {
+    this.alertBannerService.fire('info', 'Logging you out. Please wait..');
 
-  ngAfterViewInit(): void {
     this.authService.logout().pipe(
       minDuration(2000)
     ).subscribe({
       next: (result) => {
-        this.submitting.set(false);
-
         if (!result.isSuccess) {
           this.alertBannerService.fire('error', result.errorMessage);
           return;

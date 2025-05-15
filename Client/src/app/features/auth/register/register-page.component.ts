@@ -44,7 +44,6 @@ export class RegisterPageComponent {
 
     if (this.registerForm.valid) {
       this.submitting.set(true);
-      // this.errorMessage.set(undefined);
       this.submitButton.loading.set(true);
 
       const { email, password } = this.registerForm.getRawValue();
@@ -72,7 +71,5 @@ export class RegisterPageComponent {
   private reset(): void {
     this.submitting.set(false);
     this.submitButton.loading.set(false);
-    // this.successMessage.set(undefined);
-    // this.errorMessage.set(undefined);
   }
 }

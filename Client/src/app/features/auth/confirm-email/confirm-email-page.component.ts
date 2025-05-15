@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ReactiveFormsModule} from '@angular/forms';
 import {AuthService} from '../auth.service';
@@ -9,8 +9,7 @@ import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.ser
   imports: [
     ReactiveFormsModule
   ],
-  templateUrl: './confirm-email-page.component.html',
-  styleUrl: 'confirm-email-page.component.css'
+  templateUrl: './confirm-email-page.component.html'
 })
 export class ConfirmEmailPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -18,19 +17,16 @@ export class ConfirmEmailPageComponent implements OnInit {
   private authService = inject(AuthService);
   private alertBannerService = inject(SnackBarService);
 
-  protected submitting = signal(true);
-
   ngOnInit(): void {
+    this.alertBannerService.fire('info', 'Confirming your email. Please wait..');
+
     const code = this.route.snapshot.queryParamMap.get('code');
     if (!code) {
-      this.submitting.set(false);
       this.alertBannerService.fire('error', 'Invalid link.');
       return;
     }
     this.authService.confirmEmail(code).subscribe({
       next: result => {
-        this.submitting.set(false);
-
         if (!result.isSuccess) {
           this.alertBannerService.fire('error', result.errorMessage);
           return;
