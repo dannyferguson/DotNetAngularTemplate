@@ -10,7 +10,8 @@ import {AuthService} from '../auth.service';
     AlertBannerComponent,
     ReactiveFormsModule
   ],
-  templateUrl: './confirm-email-page.component.html'
+  templateUrl: './confirm-email-page.component.html',
+  styleUrl: 'confirm-email-page.component.css'
 })
 export class ConfirmEmailPageComponent implements OnInit {
   private route = inject(ActivatedRoute);

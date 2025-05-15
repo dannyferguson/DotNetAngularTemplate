@@ -1,1 +1,17 @@
-@import "tailwindcss";
+/* Comes from Angular Material */
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Custom */
+h1, h2, h3, h4, h5, h6, p, a {
+  color: #1a1b1f;
+}
+
+/* Material overrides */
+mat-form-field:not(.mat-form-field-has-subscript) .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.mat-mdc-text-field-wrapper, button[type="submit"] {
+  width: 365px !important;
+}

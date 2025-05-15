@@ -1,48 +1,32 @@
-<div class="mb-2">
-  <div class="flex items-center justify-between">
-    <label [for]="id()" class="block text-md/6 font-medium text-gray-900">{{ label() }}</label>
-    @if (buttonText()) {
-      <div class="text-sm">
-        <a [routerLink]="buttonLink() ? buttonLink() : '/'"
-           class="font-semibold text-indigo-600 hover:text-indigo-500">{{ buttonText() }}</a>
-      </div>
-    }
-  </div>
-  <div class="mt-2">
+<div class="text-input">
+  <mat-form-field>
+    <mat-label>{{ label() }}</mat-label>
     <input
+      matInput
       #inputRef
       [type]="type()"
-      [value]="value"
-      [name]="id()"
+      [formControl]="control"
       [id]="id()"
       [autocomplete]="autocomplete()"
       [required]="required()"
       [readonly]="readonly()"
-      [ngClass]="{
-        'bg-gray-200 hover:cursor-not-allowed': readonly(),
-        'bg-white': !readonly(),
-        'outline-red-400 focus:outline-red-400': formControl().errors && formControl().touched
-      }"
-      (input)="handleInput($event)"
-      (blur)="onTouched()"
-      class="block w-full rounded-md px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-    >
-  </div>
-  @if (formControl().errors && formControl().touched) {
-    <p class="text-sm/6 text-red-400 font-semibold">
-      @if (formControl().hasError('required')) {
-        Field is required.
-      } @else if (formControl().hasError('email')) {
-        Please enter a valid email.
-      } @else if (formControl().hasError('minlength') && type() === 'password') {
-        Password must contain at least 12 characters.
-      } @else if (formControl().hasError('maxlength') && type() === 'password') {
-        Password must contain at most 128 characters.
-      } @else if (formControl().hasError('passwordsMismatch') && type() === 'password') {
-        Passwords do not match.
+      class="form-text-input"
+    />
+  </mat-form-field>
+
+  <div class="text-input-error">
+    @if (control.errors && control.touched) {
+      @if (control.hasError('required')) {
+        <mat-error>Field is required.</mat-error>
+      } @else if (control.hasError('email')) {
+        <mat-error>Please enter a valid email.</mat-error>
+      } @else if (control.hasError('minlength') && type() === 'password') {
+        <mat-error>Password must contain at least 12 characters.</mat-error>
+      } @else if (control.hasError('maxlength') && type() === 'password') {
+        <mat-error>Password must contain at most 128 characters.</mat-error>
+      } @else if (control.hasError('passwordsMismatch') && type() === 'password') {
+        <mat-error>Passwords do not match.</mat-error>
       }
-    </p>
-  } @else {
-    <p>&nbsp;</p>
-  }
+    }
+  </div>
 </div>

@@ -6,6 +6,7 @@ import {SubmitButtonComponent} from '../../../shared/components/buttons/submit-b
 import {TextInputComponent} from '../../../shared/components/form-elements/text-input/text-input.component';
 import {AlertBannerComponent} from '../../../shared/components/alert-banner/alert-banner.component';
 import {passwordsMatchValidator} from '../passwords-match.validator';
+import {FormContainerComponent} from '../../../shared/components/form-elements/form-container/form-container.component';
 
 @Component({
   selector: 'app-register-page',
@@ -14,7 +15,8 @@ import {passwordsMatchValidator} from '../passwords-match.validator';
     ReactiveFormsModule,
     SubmitButtonComponent,
     TextInputComponent,
-    AlertBannerComponent
+    AlertBannerComponent,
+    FormContainerComponent
   ],
   templateUrl: './register-page.component.html'
 })

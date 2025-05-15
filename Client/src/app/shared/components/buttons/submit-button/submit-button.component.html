@@ -1,14 +1,10 @@
-<div>
+<button type="submit" mat-flat-button>
   @if (loading()) {
-    <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 hover:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-      <div class="flex justify-center items-center">
-        <div class="animate-spin rounded-full h-4 w-4 mr-2 border-2 border-t-transparent border-white"></div>
-        <span>{{loadingText()}}</span>
-      </div>
-    </button>
+    <span class="button-content">
+      <mat-spinner [diameter]="20" class="spinner white-spinner"></mat-spinner>
+      {{ loadingText() }}
+    </span>
   } @else {
-    <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 hover:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-      {{buttonText()}}
-    </button>
+    {{ buttonText() }}
   }
-</div>
+</button>

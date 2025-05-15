@@ -1,27 +1,23 @@
-import {Component, ElementRef, forwardRef, input, ViewChild} from '@angular/core';
-import {FormControl, FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule} from '@angular/forms';
-import {NgClass} from '@angular/common';
-import {RouterLink} from '@angular/router';
+import {Component, ElementRef, Input, input, ViewChild} from '@angular/core';
+import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/input';
 
 type TextInputType = 'text' | 'email' | 'password';
 type AutoCompleteType = 'off' | 'tel' | 'new-password' | 'current-password' | 'one-time-code' | 'email';
 
 @Component({
   selector: 'app-text-input',
+  standalone: true,
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    NgClass,
-    RouterLink
+    MatLabel,
+    MatInput,
+    MatFormField,
+    MatError
   ],
   templateUrl: './text-input.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => TextInputComponent),
-      multi: true,
-    },
-  ],
+  styleUrl: './text-input.component.css',
 })
 export class TextInputComponent {
   label = input.required<string>();
@@ -30,38 +26,10 @@ export class TextInputComponent {
   autocomplete = input.required<AutoCompleteType>();
   required = input<boolean>(false);
   readonly = input<boolean>(false);
-  formControl = input.required<FormControl>();
   buttonText = input<string>();
   buttonLink = input<string>();
 
+  @Input({ required: true }) control!: FormControl;
 
   @ViewChild('inputRef') inputRef!: ElementRef<HTMLInputElement>;
-
-  value = '';
-  disabled = false;
-
-  onChange = (_: any) => {};
-  onTouched = () => {};
-
-  writeValue(obj: string): void {
-    this.value = obj ?? '';
-  }
-
-  registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
-
-  registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
-
-  setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-  }
-
-  handleInput(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.value = value;
-    this.onChange(value);
-  }
 }

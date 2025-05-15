@@ -5,17 +5,20 @@ import {AuthService} from '../auth.service';
 import {SubmitButtonComponent} from '../../../shared/components/buttons/submit-button/submit-button.component';
 import {TextInputComponent} from '../../../shared/components/form-elements/text-input/text-input.component';
 import {AlertBannerComponent} from '../../../shared/components/alert-banner/alert-banner.component';
+import {FormContainerComponent} from '../../../shared/components/form-elements/form-container/form-container.component';
 
 @Component({
   selector: 'app-login-page',
   imports: [
-    RouterLink,
     ReactiveFormsModule,
     SubmitButtonComponent,
     TextInputComponent,
-    AlertBannerComponent
+    AlertBannerComponent,
+    RouterLink,
+    FormContainerComponent
   ],
-  templateUrl: './login-page.component.html'
+  templateUrl: './login-page.component.html',
+  styleUrl: './login-page.component.css'
 })
 export class LoginPageComponent {
   private router = inject(Router);
