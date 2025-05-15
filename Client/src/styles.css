@@ -8,6 +8,8 @@ h1, h2, h3, h4, h5, h6, p, a {
 }
 
 /* Material overrides */
+
+/* Customizing forms/form inputs */
 mat-form-field:not(.mat-form-field-has-subscript) .mat-mdc-form-field-subscript-wrapper {
   display: none;
 }
@@ -15,3 +17,38 @@ mat-form-field:not(.mat-form-field-has-subscript) .mat-mdc-form-field-subscript-
 .mat-mdc-text-field-wrapper, button[type="submit"] {
   width: 365px !important;
 }
+
+/* Customizing snackbars (notification at bottom of screen) */
+.mdc-snackbar__label {
+  padding: 14px 16px 14px 16px !important;
+}
+
+.mat-mdc-snackbar-surface {
+  padding-right: 0 !important;
+}
+
+.mat-mdc-snackbar-surface {
+  font-size: 16px !important;
+  height: 65px !important;
+}
+
+.mat-mdc-snackbar-surface span {
+  font-size: 16px !important;
+}
+
+.error-snackbar .mat-mdc-snackbar-surface {
+  background-color: #93000a !important;
+}
+
+.warning-snackbar .mat-mdc-snackbar-surface {
+  background-color: #935300 !important;
+}
+
+.info-snackbar .mat-mdc-snackbar-surface {
+  background-color: #005cbb !important;
+}
+
+.success-snackbar .mat-mdc-snackbar-surface {
+  background-color: #117502 !important;
+}
+

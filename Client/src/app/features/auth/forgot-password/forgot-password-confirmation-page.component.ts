@@ -4,8 +4,8 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {AuthService} from '../auth.service';
 import {SubmitButtonComponent} from '../../../shared/components/buttons/submit-button/submit-button.component';
 import {TextInputComponent} from '../../../shared/components/form-elements/text-input/text-input.component';
-import {AlertBannerComponent} from '../../../shared/components/alert-banner/alert-banner.component';
 import {passwordsMatchValidator} from '../passwords-match.validator';
+import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.service';
 
 @Component({
   selector: 'app-forgot-password-confirmation-page',
@@ -13,8 +13,7 @@ import {passwordsMatchValidator} from '../passwords-match.validator';
     RouterLink,
     ReactiveFormsModule,
     SubmitButtonComponent,
-    TextInputComponent,
-    AlertBannerComponent
+    TextInputComponent
   ],
   templateUrl: './forgot-password-confirmation-page.component.html'
 })
@@ -22,12 +21,11 @@ export class ForgotPasswordConfirmationPage implements OnInit {
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private alertBannerService = inject(SnackBarService);
 
   @ViewChild(SubmitButtonComponent) submitButton!: SubmitButtonComponent;
 
   protected submitting = signal(false);
-  protected errorMessage = signal<string | undefined>(undefined);
-  protected successMessage = signal<string | undefined>(undefined);
 
   forgotPasswordConfirmationForm = new FormGroup({
     code: new FormControl('', [Validators.required]),
@@ -58,7 +56,6 @@ export class ForgotPasswordConfirmationPage implements OnInit {
 
     if (this.forgotPasswordConfirmationForm.valid) {
       this.submitting.set(true);
-      this.errorMessage.set(undefined);
       this.submitButton.loading.set(true);
 
       const { code, email, password } = this.forgotPasswordConfirmationForm.getRawValue();
@@ -72,12 +69,12 @@ export class ForgotPasswordConfirmationPage implements OnInit {
           this.reset();
 
           if (!result.isSuccess) {
-            this.errorMessage.set(result.errorMessage);
+            this.alertBannerService.fire('error', result.errorMessage);
             return;
           }
 
           this.forgotPasswordConfirmationForm.reset();
-          this.successMessage.set(result.successMessage);
+          this.alertBannerService.fire('success', result.successMessage, 2500);
           setTimeout(() => {
             this.router.navigate(['/login']);
           }, 2000);
@@ -89,7 +86,5 @@ export class ForgotPasswordConfirmationPage implements OnInit {
   private reset(): void {
     this.submitting.set(false);
     this.submitButton.loading.set(false);
-    this.successMessage.set(undefined);
-    this.errorMessage.set(undefined);
   }
 }

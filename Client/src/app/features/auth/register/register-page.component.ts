@@ -4,9 +4,9 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {AuthService} from '../auth.service';
 import {SubmitButtonComponent} from '../../../shared/components/buttons/submit-button/submit-button.component';
 import {TextInputComponent} from '../../../shared/components/form-elements/text-input/text-input.component';
-import {AlertBannerComponent} from '../../../shared/components/alert-banner/alert-banner.component';
 import {passwordsMatchValidator} from '../passwords-match.validator';
 import {FormContainerComponent} from '../../../shared/components/form-elements/form-container/form-container.component';
+import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.service';
 
 @Component({
   selector: 'app-register-page',
@@ -15,19 +15,17 @@ import {FormContainerComponent} from '../../../shared/components/form-elements/f
     ReactiveFormsModule,
     SubmitButtonComponent,
     TextInputComponent,
-    AlertBannerComponent,
     FormContainerComponent
   ],
   templateUrl: './register-page.component.html'
 })
 export class RegisterPageComponent {
   private authService = inject(AuthService);
+  private alertBannerService = inject(SnackBarService);
 
   @ViewChild(SubmitButtonComponent) submitButton!: SubmitButtonComponent;
 
   protected submitting = signal(false);
-  protected errorMessage = signal<string | undefined>(undefined);
-  protected successMessage = signal<string | undefined>(undefined);
 
   registerForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
@@ -46,7 +44,7 @@ export class RegisterPageComponent {
 
     if (this.registerForm.valid) {
       this.submitting.set(true);
-      this.errorMessage.set(undefined);
+      // this.errorMessage.set(undefined);
       this.submitButton.loading.set(true);
 
       const { email, password } = this.registerForm.getRawValue();
@@ -60,12 +58,12 @@ export class RegisterPageComponent {
           this.reset();
 
           if (!result.isSuccess) {
-            this.errorMessage.set(result.errorMessage);
+            this.alertBannerService.fire('error', result.errorMessage);
             return;
           }
 
           this.registerForm.reset();
-          this.successMessage.set(result.successMessage);
+          this.alertBannerService.fire('success', result.successMessage);
         }
       });
     }
@@ -74,7 +72,7 @@ export class RegisterPageComponent {
   private reset(): void {
     this.submitting.set(false);
     this.submitButton.loading.set(false);
-    this.successMessage.set(undefined);
-    this.errorMessage.set(undefined);
+    // this.successMessage.set(undefined);
+    // this.errorMessage.set(undefined);
   }
 }

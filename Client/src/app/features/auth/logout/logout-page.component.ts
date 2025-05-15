@@ -1,25 +1,23 @@
 import {AfterViewInit, Component, inject, signal} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {AuthService} from '../auth.service';
-import {AlertBannerComponent} from '../../../shared/components/alert-banner/alert-banner.component';
 import {Router} from '@angular/router';
 import {minDuration} from '../../../shared/operators/min-duration.operator';
+import {SnackBarService} from '../../../shared/components/snackbar/snack-bar.service';
 
 @Component({
   selector: 'app-login-page',
   imports: [
-    ReactiveFormsModule,
-    AlertBannerComponent
+    ReactiveFormsModule
   ],
   templateUrl: './logout-page.component.html'
 })
 export class LogoutPageComponent implements AfterViewInit {
   private router = inject(Router);
   private authService = inject(AuthService);
+  private alertBannerService = inject(SnackBarService);
 
   protected submitting = signal(true);
-  protected errorMessage = signal<string | undefined>(undefined);
-  protected successMessage = signal<string | undefined>(undefined);
 
   ngAfterViewInit(): void {
     this.authService.logout().pipe(
@@ -29,11 +27,11 @@ export class LogoutPageComponent implements AfterViewInit {
         this.submitting.set(false);
 
         if (!result.isSuccess) {
-          this.errorMessage.set(result.errorMessage);
+          this.alertBannerService.fire('error', result.errorMessage);
           return;
         }
 
-        this.successMessage.set(result.successMessage);
+        this.alertBannerService.fire('success', result.successMessage, 2500);
         setTimeout(() => {
           this.router.navigate(['/login']);
         }, 2000);
