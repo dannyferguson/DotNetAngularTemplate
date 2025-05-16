@@ -1,0 +1,5 @@
+﻿{
+  "Headless": false,
+  "SlowMo": 2000,
+  "BaseUrl": "http://localhost:5000"
+}
