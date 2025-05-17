@@ -4,7 +4,7 @@ public class GlobalFixture : IDisposable
 {
     public GlobalFixture()
     {
-        _ = TestStartup.Initialized;
+        _ = PlaywrightInstallFixture.Initialized;
     }
 
     public void Dispose()

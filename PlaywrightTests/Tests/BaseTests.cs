@@ -8,10 +8,10 @@ public class BaseTests : BasePlaywrightTest
     {
         await Page.GotoAsync(BaseUrl);
 
-        // Get page title
-        var pageTitle = await Page.Locator("h2").TextContentAsync();
+        // Get page h2
+        var h2 = await Page.Locator("h2").TextContentAsync();
 
-        // Expect title to contain welcome message
-        Assert.Matches("Welcome", pageTitle);
+        // Expect h2 to contain welcome wording
+        Assert.Matches("Welcome", h2);
     }
 }

@@ -1,10 +1,10 @@
 ﻿namespace PlaywrightTests.Fixtures;
 
-public class TestStartup
+public class PlaywrightInstallFixture
 {
     public static bool Initialized { get; private set; }
 
-    static TestStartup()
+    static PlaywrightInstallFixture()
     {
         var exitCode = Microsoft.Playwright.Program.Main(new[] { "install" });
         if (exitCode != 0)
