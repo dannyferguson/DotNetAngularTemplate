@@ -1,5 +1,5 @@
 # Todo
-- Finish setting up basic playwright test suite + wire it up to be ran in CI somehow (docker?)
+- Wire up basic playwright test suite to run in CI somehow
 
 - Add a "you just logged in from a new IP" email if their new login ip isnt found in the login_history table.
 - Add basic CRUD homepage/demo functionality. Like a notes app or something.

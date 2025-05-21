@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using PlaywrightTests.Fixtures;
+﻿using PlaywrightTests.Fixtures;
 
 namespace PlaywrightTests.Tests.Auth;
 
@@ -42,6 +41,18 @@ public class LoginTests : BasePlaywrightTest
     }
     
     [Fact]
+    public async Task LoginFormErrorsWhenNoInfoEntered()
+    {
+        await Page.GotoAsync($"{BaseUrl}/login");
+        
+        // Attempt to submit form
+        await Page.ClickAsync("button[type='submit']");
+        
+        // Assert we see 2 form field validation errors
+        Assert.Equal(2, await Page.Locator(".text-input-error").CountAsync());
+    }
+    
+    [Fact]
     public async Task LoginFormWorksWithVerifiedAccount()
     {
         var (email, password) = await _db.GenerateAccount(true); 
@@ -56,8 +67,10 @@ public class LoginTests : BasePlaywrightTest
         await passwordInput.FillAsync(password);
         
         await Page.ClickAsync("button[type='submit']");
-
-        // Optional: wait for navigation or success indicator
+        
+        // Assert we see a success snackbar
+        Assert.True(await Page.Locator("text=Login successful! Redirecting..").IsVisibleAsync());
+        
         await Page.WaitForURLAsync($"{BaseUrl}/");
 
         // Assert we were redirected to homepage
@@ -85,7 +98,7 @@ public class LoginTests : BasePlaywrightTest
     }
     
     [Fact]
-    public async Task LoginFormErrorsWithInvalidAccount()
+    public async Task LoginFormErrorsWithInvalidEmail()
     {
         await Page.GotoAsync($"{BaseUrl}/login");
 
@@ -95,6 +108,26 @@ public class LoginTests : BasePlaywrightTest
         
         var passwordInput = Page.Locator("input#password");
         await passwordInput.FillAsync("supersecurepassword123");
+        
+        await Page.ClickAsync("button[type='submit']");
+
+        // Assert we see an error snackbar
+        Assert.True(await Page.Locator("text=Invalid credentials. Please try again.").IsVisibleAsync());
+    }
+    
+    [Fact]
+    public async Task LoginFormErrorsWithInvalidPassword()
+    {
+        var (email, password) = await _db.GenerateAccount(true); 
+        
+        await Page.GotoAsync($"{BaseUrl}/login");
+
+        // Fill in login form
+        var emailInput = Page.Locator("input#email");
+        await emailInput.FillAsync(email);
+        
+        var passwordInput = Page.Locator("input#password");
+        await passwordInput.FillAsync("thisiswrong123456");
         
         await Page.ClickAsync("button[type='submit']");
 
