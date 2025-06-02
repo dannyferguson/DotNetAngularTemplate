@@ -9,19 +9,16 @@ public class EmailService(ILogger<EmailService> logger, IConfiguration config, I
     public async Task SendForgotPasswordEmail(string email, string code)
     {
         var subject = "Password Reset";
-        var content = $"""
-                            A password reset has been requested for your account. In order to reset your password, please go to:
-                            http://localhost:4200/forgot-password-confirmation?code={code}&email={email}
-                           """;
+        var content = LoadTemplate("PasswordResetEmailTemplate.html")
+            .Replace("{{RESET_LINK}}",
+                $"{config["Custom:BaseUrl"]}/forgot-password-confirmation?code={code}&email={email}");
         await SendEmail(email, subject, content);
     }
     
     public async Task SendPasswordChangedEmail(string email)
     {
         var subject = "Password Changed";
-        var content = $"""
-                        Your password has been successfully changed. If you did not make this change, please contact support ASAP at (support email).
-                       """;
+        var content = LoadTemplate("PasswordChangedEmailTemplate.html");
         await SendEmail(email, subject, content);
     }
 
@@ -29,10 +26,7 @@ public class EmailService(ILogger<EmailService> logger, IConfiguration config, I
     {
         var subject = "Welcome";
         var content = LoadTemplate("RegistrationEmailTemplate.html")
-            .Replace("{{APP_NAME}}", config["Custom:AppName"])
-            .Replace("{{CONFIRMATION_LINK}}", $"{config["Custom:BaseUrl"]}/confirm-email?code={code}")
-            .Replace("{{SUPPORT_EMAIL}}", config["Custom:SupportEmail"])
-            .Replace("{{BASE_URL}}", config["Custom:BaseUrl"]);
+            .Replace("{{CONFIRMATION_LINK}}", $"{config["Custom:BaseUrl"]}/confirm-email?code={code}");
         return await SendEmail(email, subject, content);
     }
 
@@ -66,6 +60,12 @@ public class EmailService(ILogger<EmailService> logger, IConfiguration config, I
     private string LoadTemplate(string templateName)
     {
         var path = Path.Combine(AppContext.BaseDirectory, "EmailTemplates", templateName);
-        return File.ReadAllText(path);
+        var html = File.ReadAllText(path);
+
+        html = html.Replace("{{APP_NAME}}", config["Custom:AppName"])
+            .Replace("{{SUPPORT_EMAIL}}", config["Custom:SupportEmail"])
+            .Replace("{{BASE_URL}}", config["Custom:BaseUrl"]);
+        
+        return html;
     }
 }
