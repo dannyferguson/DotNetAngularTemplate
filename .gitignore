@@ -2,7 +2,8 @@
 .idea/
 
 # Nuke build
-.nuke/
+.nuke/temp/
+.nuke/**/*.bak
 Output/
 
 # Non-template scripts that might contain secrets

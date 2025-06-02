@@ -1,0 +1,9 @@
+﻿{
+  "Headless": false,
+  "SlowMo": 2000,
+  "BaseUrl": "http://localhost:5000",
+  "TestUsers": {
+    "Domain": "ondanny.com",
+    "Email": ""
+  }
+}
