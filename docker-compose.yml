@@ -1,5 +1,4 @@
-version: '3.9'
-
+---
 services:
   app:
     build:
@@ -8,19 +7,28 @@ services:
     ports:
       - "8080:5000"
     environment:
-      ConnectionStrings__Default: "Server=mysql;Database=appdb;Uid=root;Password=supersecure123;"
+      ConnectionStrings__Default: "Server=mysql;Database=appdb;Uid=root;Password=supersecure123;SslMode=none;AllowPublicKeyRetrieval=True;"
       ConnectionStrings__Redis: "redis:6379"
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: "Development"
+      Emails__ResendApiKey: "set-me"
+      Emails__From: "noreply@example.com"
     volumes:
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
     depends_on:
-      - redis
-      - mysql
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
 
   redis:
     image: redis:7
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   mysql:
     image: mysql:8
@@ -30,6 +38,12 @@ services:
       MYSQL_DATABASE: appdb
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./API/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # Any SQL scripts in this directory get ran when the container is first created. In our case, this creates the basic db schema so that the app is operational.
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   mysql_data:
